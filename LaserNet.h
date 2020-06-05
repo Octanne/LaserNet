@@ -106,8 +106,11 @@ private:
 class LASERNET {
 public:
 	LASERNET();
+	~LASERNET();
+	void stop();
 	std::string setStateCmd(std::string command);
 	std::string getStateInfo(bool complet = true) const;
+	
 private:
 	enum states {
 		INIT,
@@ -117,4 +120,5 @@ private:
 		READY
 	};
 	int state = 0;
+	LaserNet_Transfert *LNT = nullptr;
 };

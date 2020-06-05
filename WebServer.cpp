@@ -1,6 +1,7 @@
 #include "WebServer.h"
 
 LASERNET LN;
+bool debug = false;
 
 
 WebServer::WebServer()
@@ -18,41 +19,37 @@ WebServer::WebServer()
 	port = "8000";
 
 }
-
-
-WebServer::~WebServer()
-{
-
-}
+WebServer::~WebServer() {}
 
 void WebServer::launch() {
 	
 	std::cout << "Starting WebServer on port " << port << std::endl;
 	
 	// Start Web Server
-	nc = mg_bind_opt(&mgr, port.c_str(), ev_handler, bind_opts);
+	ncServ = mg_bind_opt(&mgr, port.c_str(), ev_handler, bind_opts);
 
 	// If connection fails
-	if (nc == NULL) {
+	if (ncServ == NULL) {
 		std::cout << "Failed to create listener : " << err << std::endl;
 		return;
 	}
 
 	// Set up HTTP server options
-	mg_set_protocol_http_websocket(nc);
+	mg_set_protocol_http_websocket(ncServ);
 
 	s_http_server_opts.document_root = "/home/pi/Desktop/WebInterface";
 	s_http_server_opts.enable_directory_listing = "no";
 
-	for (;;) {
+	std::cout << LN.setStateCmd("WebServer") << std::endl;
+
+	while(isUp)
 		mg_mgr_poll(&mgr, 1000);
-	}
 
 	//Free up all memory allocated
 	mg_mgr_free(&mgr);
-
-	std::cout << LN.setStateCmd("WebServer") << std::endl;
 }
+
+void WebServer::stop() { isUp = false; LN.stop(); }
 
 std::string intoString(const char* a, int size)
 {
@@ -68,145 +65,249 @@ std::string intoString(const char* a, int size)
 static void ev_handler(struct mg_connection *nc, int ev, void *p) {
 	switch (ev) {
 		case MG_EV_WEBSOCKET_HANDSHAKE_DONE: {
-			/* New websocket connection. */
-			char addr[32];
-			mg_sock_addr_to_str(&nc->sa, addr, sizeof(addr),
-				MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
-			std::cout << "[WebSocket] connection with " << addr << " has been started." << std::endl;
+			connectionOpen(nc);// New websocket connection.
 			break;
 		}
 		case MG_EV_CLOSE: {
-			/* Disconnect WSocket connection */
-			if (nc->flags & MG_F_IS_WEBSOCKET) {
-				char addr[32];
-				mg_sock_addr_to_str(&nc->sa, addr, sizeof(addr),
-					MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
-				std::cout << "[WebSocket] connection with " << addr << " has been ended." << std::endl;
-			}
+			connectionClosed(nc);// Disconnect WSocket connection
 			break;
 		}
 		case MG_EV_WEBSOCKET_FRAME: {
-			struct websocket_message *wm = (struct websocket_message *) p;
-			/* New websocket message read & send an answer. */
-			char addr[32];
-			struct mg_str d = { (char *)wm->data, wm->size };
-			mg_sock_addr_to_str(&nc->sa, addr, sizeof(addr),
-				MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
-			std::cout << "[WebSocket] a new request receive of " << addr <<  " :" << std::endl;
-
-			rapidjson::Document jsonDoc;
-			jsonDoc.Parse(intoString(d.p, d.len).c_str());
-			rapidjson::Value& secretKey = jsonDoc["secretKey"];
-			rapidjson::Value& date = jsonDoc["date"];
-			rapidjson::Value& order = jsonDoc["order"];
-			rapidjson::Value& args = jsonDoc["args"];
-
-			if (!secretKey.IsNull()) {
-				std::cout << "---------------------------------------" << std::endl;
-				std::cout << "secretKey : " << secretKey.GetString() << std::endl;
-				std::cout << "date : " << date.GetString() << std::endl;
-				std::cout << "order : " << order.GetString() << std::endl;
-				std::cout << "args : " << args.GetString() << std::endl;
-				std::cout << "---------------------------------------" << std::endl;
-			}
-
-			if (std::string(secretKey.GetString()) == "secretKey") {
-				std::cout << "[WebSocket] SecretKey is correct !" << std::endl;
-				if (std::string(order.GetString()) == "status") {
-
-					// Document
-					rapidjson::Document jsonDocSend;
-					const char* jsonTxt = "{\"type\":\"sysStatus\",\"temp\":\"\",\"cpuUsage\":\"\",\"ramUsage\":\"\",\"netUsage\":\"\",\"webStatus\":\"\",\"syncStatus\":\"\"}";
-					jsonDocSend.Parse(jsonTxt);
-
-					// Type
-					rapidjson::Value& typeV = jsonDocSend["type"];
-					typeV.SetString("sysStatus");
-					// Temperature
-					rapidjson::Value& tempV = jsonDocSend["temp"];
-					tempV.SetDouble(temperature());
-					// CPU Usage // A revoir
-					rapidjson::Value& cpuPrctV = jsonDocSend["cpuUsage"];
-					cpuPrctV.SetDouble(cpu_usage());
-					// RAM Usage
-					rapidjson::Value& ramPrctV = jsonDocSend["ramUsage"];
-					ramPrctV.SetDouble(mem_usage());
-					// NET Usage
-					rapidjson::Value& netPrctV = jsonDocSend["netUsage"];
-					netPrctV.SetDouble(net_usage());
-					// Status Lasernet @Todo
-					rapidjson::Value& webStatV = jsonDocSend["webStatus"];
-					webStatV.SetBool(false);
-					rapidjson::Value& syncStatV = jsonDocSend["syncStatus"];
-					syncStatV.SetBool(false);
-
-					// Stringify the DOM
-					rapidjson::StringBuffer buffer;
-					rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-					jsonDocSend.Accept(writer);
-					
-					mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buffer.GetString(), buffer.GetSize());
-					std::cout << "[WebSocket] SysStatus message send to " << addr << " !" << std::endl;
-				}
-				else if (std::string(order.GetString()) == "command") {
-
-					if (args.GetString() == "help" || args.GetString() == "?") {
-						sendMsg(nc, addr, "info", LN.getStateInfo());
-					}
-					else
-						sendMsg(nc, addr, "info", LN.setStateCmd(args.GetString()));
-					
-				}
-				else { // Invalid Order
-					sendMsg(nc, addr, "error", "You have send an invalid order!");
-				}
-			}
-			else {
-				std::cout << "[WebSocket] SecretKey isn't correct !" << std::endl;
-				// Document
-				rapidjson::Document jsonDocSend;
-				const char* jsonTxt = "{\"type\":\"error\",\"msg\":\"\"}";
-				jsonDocSend.Parse(jsonTxt);
-
-				// Type
-				rapidjson::Value& typeV = jsonDocSend["type"];
-				typeV.SetString("error");
-				// Temperature
-				rapidjson::Value& tempV = jsonDocSend["msg"];
-				tempV.SetString("You have send an invalid secretKey!");
-
-				// Stringify the DOM
-				rapidjson::StringBuffer buffer;
-				rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-				jsonDocSend.Accept(writer);
-
-				mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buffer.GetString(), buffer.GetSize());
-				std::cout << "[WebSocket] Error message send to " << addr << " !" << std::endl;
-				// SEND Error => bad key
-			}
+			msgReceived(nc, p);// New websocket message read & send an answer.
 			break;
 		}
-		// If event is a http request
-		case MG_EV_HTTP_REQUEST: {
+		case MG_EV_HTTP_REQUEST: {// If event is a http request (load the page)
 			mg_serve_http(nc, (struct http_message *) p, s_http_server_opts);
 			break;
 		}
 	}
 }
 
-void sendMsg(struct mg_connection* nc, char addr[32], std::string type, std::string arg)
+const std::string getAddr(struct mg_connection *nc)
+{
+	char addr[32];
+	mg_sock_addr_to_str(&nc->sa, addr, sizeof(addr),
+		MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
+	return addr;//TODO: bug ?
+}
+
+void connectionOpen(struct mg_connection* nc)
+{
+	std::cout << "[WebSocket] connection with " << getAddr(nc) << " has been started." << std::endl;
+}
+
+void connectionConfirmed(struct mg_connection* nc)
+{
+	//appellée quand on a reçu un message et que la secret key est valide
+	const std::string addr = getAddr(nc);
+	if (isConnectionConfirmed(addr)) {
+		std::cout << "[WebSocket] connection with " << addr << " is already confirmed." << std::endl;
+		return;
+	}
+
+	std::cout << "[WebSocket] connection with " << addr << " has been confirmed." << std::endl;
+	for (size_t i = 0; i < ncs.size(); i++) {
+		const std::string currentAddr = getAddr(ncs.at(i));
+		if (currentAddr == addr)
+			return;
+	}
+	ncs.push_back(nc);
+
+	sendMsg(nc, "managment", "connected");
+
+	sendMsg(nc, "connection", "New client is here (total:" + std::to_string(ncs.size()) + ")", true);
+
+	sendMsg(nc, "answer", LN.getStateInfo());//donne l'état de LaserNet actuel
+	std::cout << "[WebSocket] Answer message send to " << addr << std::endl;
+}
+
+bool isConnectionConfirmed(const std::string addr)
+{
+	for (size_t i = 0; i < ncs.size(); i++) {
+		const std::string currentAddr = getAddr(ncs.at(i));
+		if (currentAddr == addr)
+			return true;
+	}
+	return false;
+}
+
+void connectionClosed(struct mg_connection* nc)
+{
+	const std::string addr = getAddr(nc);
+	if (nc->flags & MG_F_IS_WEBSOCKET) {
+		std::cout << "[WebSocket] connection with " << addr << " has been ended." << std::endl;
+	}
+	if (!isConnectionConfirmed(addr))
+		return;
+	int clientRemoved = 0;
+	for (int i = ncs.size()-1; i > 0 ; i--) {
+		const std::string currentAddr = getAddr(ncs.at(i));
+		if (currentAddr == addr) {
+			ncs.erase(ncs.begin() + i);
+			clientRemoved++;
+		}
+	}
+	sendMsg(nc, "managment", "disconnected");//aucun destinnataire en temps normal
+	sendMsg(nc, "connection", "Client had leaved (total:" + std::to_string(ncs.size()) + ")", true);
+	std::cout << "connectionClosed: " << clientRemoved << " client removed" << std::endl;
+}
+
+void msgReceived(struct mg_connection* nc, void* p)
+{
+	const std::string addr = getAddr(nc);
+
+	struct websocket_message* wm = (struct websocket_message*) p;
+	struct mg_str d = { (char*)wm->data, wm->size };
+
+	rapidjson::Document jsonDoc;
+	jsonDoc.Parse(intoString(d.p, d.len).c_str());
+
+	if (jsonDoc["type"].IsNull()) {
+		sendMsg(nc, "error", "You have send an invalid message!");
+		if (debug)
+			std::cout << "[WebSocket] Error message send by " << addr << " : Invalid message" << std::endl;
+		if (!jsonDoc["order"].IsNull())
+			std::cout << "[WebSocket] Error message send by " << addr << " : You are using an old version" << std::endl;
+		return;
+	}
+
+	if (std::string("auth") == jsonDoc["type"].GetString()) {
+		if (debug)
+			std::cout << "[WebSocket] New request received from " << addr << " : authentification" << std::endl;
+
+		if (isConnectionConfirmed(addr)) {
+			sendMsg(nc, "connection", "Authentification is already confirmed!");
+			return;
+		}
+		if (debug) {
+			std::cout << "---------------------------------------" << std::endl;
+			std::cout << "auth with : " << addr << std::endl;
+			std::cout << "secretKey : " << jsonDoc["key"].GetString() << std::endl;
+			std::cout << "date : " << jsonDoc["date"].GetString() << std::endl;
+			std::cout << "---------------------------------------" << std::endl;
+		}
+		if (std::string("secretKey") == jsonDoc["key"].GetString()) {//secretKey
+			connectionConfirmed(nc);
+			sendMsg(nc, "connection", "Authentification confirmed!");
+		}
+		else {
+			if (debug)
+				std::cout << "[WebSocket] SecretKey isn't correct for " << addr << std::endl;
+			sendMsg(nc, "connection", "You have send an invalid secretKey!");
+		}
+
+		return;
+	}
+
+	if (!isConnectionConfirmed(addr)) {
+		sendMsg(nc, "answer", "You are not authentified.");
+		return;//connection invalide
+	}
+
+	std::string time = jsonDoc["date"].GetString();
+	std::string type = jsonDoc["type"].GetString();
+	std::string args = jsonDoc["args"].GetString();
+
+
+	if (debug && type != "status") {
+		std::cout << "[WebSocket] New request received from " << addr
+			<< " : " << type
+			<< " at " << time
+			<< " (args: " << args << ")" << std::endl;
+	}
+	if (type == "status") {
+		sendStatus(nc);
+	}
+	else if (type == "command") {
+		if (args == "help" || args == "?") {
+			sendLaserNetStatus(nc);
+		}
+		else if (args.rfind("chat ", 0) == 0) {//si il est en pos 0
+			args = args.replace(0, 4, "");//5-1
+			sendMsg(nc, "chat", args, true);
+		}
+		else if (args.rfind("debug", 0) == 0) {
+			args.replace(0, 4, "");//5-1
+			if (args.size() > 0) {
+				if(args.rfind(" ", 0) == 0)
+					args.replace(0, 1, "");//5-1
+				debug = (args == "enabled" || args == "true" || args == "on");
+			}
+			sendMsg(nc, "answer", std::string("Current state for debug: ") + (debug ? "enbaled" : "disabled"));
+		}
+		else {
+			std::string retour = LN.setStateCmd(args);
+			if (retour == "") {
+				sendLaserNetStatus(nc);
+			}
+			else {
+				sendMsg(nc, "answer", retour, true);
+				std::cout << "[WebSocket] Answer message send to " << addr << std::endl;
+			}
+		}
+	}
+	else { // Invalid type
+		sendMsg(nc, "error", "You have send an invalid type!");
+		if (debug)
+			std::cout << "[WebSocket] Error message send to " << addr << " : Invalid type" << std::endl;
+	}
+}
+
+void sendMsg(struct mg_connection* nc, std::string type, std::string arg, bool toEveryone)
 {
 	// Document
 	rapidjson::Document jsonDocSend;
-	const char* jsonTxt = std::string("{\"type\":\"" + type + "\",\"msg\":\"\"}").c_str();
+	jsonDocSend.Parse("{\"type\":\"unset\",\"msg\":\"\"}");
+
+	// Type
+	jsonDocSend["type"].SetString(rapidjson::StringRef(type.c_str()));
+
+	// Content
+	jsonDocSend["msg"].SetString(rapidjson::StringRef(arg.c_str()));
+
+	// Stringify the DOM
+	rapidjson::StringBuffer buffer;
+	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+	jsonDocSend.Accept(writer);
+
+	if (toEveryone) {
+		for (size_t i = 0; i < ncs.size(); i++) {
+			mg_send_websocket_frame(ncs.at(i), WEBSOCKET_OP_TEXT, buffer.GetString(), buffer.GetSize());
+		}
+		if(!isConnectionConfirmed(getAddr(nc)))//si il fait pas partit de la boucle d'avant
+			mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buffer.GetString(), buffer.GetSize());
+	}
+	else
+		mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buffer.GetString(), buffer.GetSize());
+}
+
+void sendStatus(mg_connection* nc)
+{
+	// Document
+	rapidjson::Document jsonDocSend;
+	const char* jsonTxt = "{\"type\":\"sysStatus\",\"temp\":\"\",\"cpuUsage\":\"\",\"ramUsage\":\"\",\"netUsage\":\"\",\"webStatus\":\"\",\"syncStatus\":\"\"}";
 	jsonDocSend.Parse(jsonTxt);
 
 	// Type
 	rapidjson::Value& typeV = jsonDocSend["type"];
-	typeV.SetString(rapidjson::StringRef(type.c_str()));
+	typeV.SetString("sysStatus");
 	// Temperature
-	rapidjson::Value& tempV = jsonDocSend["msg"];
-	tempV.SetString(rapidjson::StringRef(arg.c_str()));
+	rapidjson::Value& tempV = jsonDocSend["temp"];
+	tempV.SetDouble(temperature());
+	// CPU Usage // A revoir
+	rapidjson::Value& cpuPrctV = jsonDocSend["cpuUsage"];
+	cpuPrctV.SetDouble(cpu_usage());
+	// RAM Usage
+	rapidjson::Value& ramPrctV = jsonDocSend["ramUsage"];
+	ramPrctV.SetDouble(mem_usage());
+	// NET Usage
+	rapidjson::Value& netPrctV = jsonDocSend["netUsage"];
+	netPrctV.SetDouble(net_usage());
+	// Status Lasernet @Todo
+	rapidjson::Value& webStatV = jsonDocSend["webStatus"];
+	webStatV.SetBool(false);
+	rapidjson::Value& syncStatV = jsonDocSend["syncStatus"];
+	syncStatV.SetBool(false);
 
 	// Stringify the DOM
 	rapidjson::StringBuffer buffer;
@@ -214,7 +315,14 @@ void sendMsg(struct mg_connection* nc, char addr[32], std::string type, std::str
 	jsonDocSend.Accept(writer);
 
 	mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buffer.GetString(), buffer.GetSize());
-	std::cout << "[WebSocket] " + type + " message send to " << addr << std::endl;
+	if (debug)
+		std::cout << "[WebSocket] SysStatus message send to " << getAddr(nc) << " !" << std::endl;
+}
+
+void sendLaserNetStatus(mg_connection* nc)
+{
+	sendMsg(nc, "answer", LN.getStateInfo(), true);
+	std::cout << "[WebSocket] Answer message send to everyone (by " << getAddr(nc) << ")" << std::endl;
 }
 
 // Mem Usage

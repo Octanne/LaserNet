@@ -173,7 +173,8 @@ bool LASERNET_LASER::send(const Tins::Packet& pkt)
 
 	std::cout << "[LaserNet_J/laser/send] envoye du packet " << counterPacket << " (size:" << pout.size() << ")" << std::endl;
 	las->sendPkt(pout, &askToStop);
-	std::cout << "[LaserNet_J/laser/send] packet " << counterPacket << " renvoye " << pout << std::endl;
+	//TODO: if debug
+	//std::cout << "[LaserNet_J/laser/send] packet " << counterPacket << " renvoye " << pout << std::endl;
 	stat_totalSizePkt += pout.size();
 	return !askToStop;
 }
@@ -258,7 +259,8 @@ void LASERNET_CAPTEUR::process()
 			packet::PIn pkt = cap->getPkt(&askToStop, &ok);// receiveData(&ok);
 			if (!ok)
 				continue;
-			std::cout << "[LaserNet_J/capteur/process] packet recu " << counterPacket << " (size:" << pkt.size() << "): " << pkt << std::endl;
+			//TODO: if debug
+			//std::cout << "[LaserNet_J/capteur/process] packet recu " << counterPacket << " (size:" << pkt.size() << "): " << pkt << std::endl;
 			uint8_t type = 0;
 			pkt >> type;//change la taille, ne pas oublier de dire que 8 bits sont en moins !
 			if (type == 0) {
@@ -417,6 +419,21 @@ void LaserNet_Transfert::stop()
 
 LASERNET::LASERNET() {}
 
+LASERNET::~LASERNET()
+{
+	if (LNT != nullptr) {
+		delete LNT;
+		LNT = nullptr;
+	}
+}
+
+void LASERNET::stop() {
+	std::cout << "[LaserNet] stop" << std::endl;
+	if(LNT != nullptr)
+		LNT->stop();
+	std::cout << "[LaserNet] stoped" << std::endl;
+}
+
 
 std::string LASERNET::setStateCmd(std::string command)
 {
@@ -432,13 +449,17 @@ std::string LASERNET::setStateCmd(std::string command)
 		return "This system is not defined for LaserNet";
 #endif //WELCOM
 		state = states::ASK_CAPTEUR;
-		break;
+		return "[LaserNet] Init was done with success";
 	case states::ASK_CAPTEUR:
+		std::cout << "[LaserNet] state: ASK_CAPTEUR" << std::endl;
 		pinC = PinLib::pinPValid(command, 36);
+		std::cout << "[LaserNet] pinC: " << pinC << std::endl;
 		state = states::ASK_LASER;
 		break;
 	case states::ASK_LASER:
-		pinC = PinLib::pinPValid(command, 38);
+		std::cout << "[LaserNet] state: ASK_LASER" << std::endl;
+		pinL = PinLib::pinPValid(command, 38);
+		std::cout << "[LaserNet] pinL:" << pinL << std::endl;
 		if (!checkPins()) {
 			state = states::ASK_CAPTEUR;
 			return "Error: invalids pins, try again";
@@ -457,8 +478,8 @@ std::string LASERNET::setStateCmd(std::string command)
 		}
 
 		state = states::READY;
-		LaserNet_Transfert LNT;
-		LNT.exec();
+		
+		LNT->exec();
 		break;
 		}
 	case states::READY:
@@ -474,9 +495,9 @@ std::string LASERNET::getStateInfo(bool complet) const
 	case states::INIT:
 		return "[LaserNet] initialisation...";
 	case states::ASK_CAPTEUR:
-		return "[LaserNet] Entrer les pins PHYSIQUES (default:WP/Physic)\nPins du Capteur (defaut:36)";
+		return "[LaserNet] Entrer les pins PHYSIQUES (default:WP/Physic)\nPin du Capteur (defaut:36):";
 	case states::ASK_LASER:
-		return "[LaserNet] Entrer les pins PHYSIQUES (default:WP/Physic)\nPins du Laser (defaut:38):";
+		return "[LaserNet] Entrer les pins PHYSIQUES (default:WP/Physic)\nPin du Laser (defaut:38):";
 	case states::ASK_INTERFACE:
 		return printAllInterfaces() + "Quelle interface ? ('non' pour celle par defaut)";
 	case states::READY:
@@ -492,3 +513,4 @@ std::string LASERNET::getStateInfo(bool complet) const
 	}
 	return "Error: states unknow: " + state;
 }
+

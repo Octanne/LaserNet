@@ -374,7 +374,8 @@ void LASER::sendPkt(const packet::POut &pkt, const bool *askToStop)
 		}
 	}
 	int64_t stop = getCurrentus();
-	std::cout << "sendPkt fini apres " << (stop-start) << " us et " << pkt.size() << " bits = " << ((stop-start)/pkt.size()) << " us/bit" << std::endl;
+	//TODO: if debug
+	//std::cout << "sendPkt fini apres " << (stop-start) << " us et " << pkt.size() << " bits = " << ((stop-start)/pkt.size()) << " us/bit" << std::endl;
 	waitToNextBit();
 	setStateP(0);//sécuritée remetre à 0
 	waitToNextBit();
