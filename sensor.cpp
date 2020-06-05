@@ -323,7 +323,7 @@ packet::PIn CAPTEUR::getPkt(const bool *askToStop, bool *ok)
 	
 	startSafe();//on est au premier bit (de maintenance)
 	lastus += safeTime / 2;//5/10 du temps pour pas etre pile au début (etre un peu au milieu
-	int64_t start = getCurrentus();
+	//int64_t start = getCurrentus();
 
 	while (!pkt.isComplete()) {//on récupère le packet
 		if (askToStop && *askToStop)
@@ -340,7 +340,7 @@ packet::PIn CAPTEUR::getPkt(const bool *askToStop, bool *ok)
 		}
 		pkt << state;
 	}
-	int64_t stop = getCurrentus();
+	//int64_t stop = getCurrentus();
 	//TODO: if debug
 	//std::cout << "getPkt fini apres " << (stop-start) << " us et " << pkt.size() << " bits = " << ((stop-start)/pkt.size()) << " us/bit" << std::endl;
 	if (ok) *ok = true;//il est complet
@@ -356,7 +356,7 @@ void LASER::sendPkt(const packet::POut &pkt, const bool *askToStop)
 		return;
 	if (!isConnected())
 		return;
-	int64_t start = getCurrentus();
+	//int64_t start = getCurrentus();
 	startSafe();//init
 	setStateP(1);//bit de départ
 
@@ -375,8 +375,8 @@ void LASER::sendPkt(const packet::POut &pkt, const bool *askToStop)
 			//std::cout << "retard dans le laser: skipped " << bitSkipped << " bits at " << i << std::endl;
 		}
 	}
-	int64_t stop = getCurrentus();
 	//TODO: if debug
+	//int64_t stop = getCurrentus();
 	//std::cout << "sendPkt fini apres " << (stop-start) << " us et " << pkt.size() << " bits = " << ((stop-start)/pkt.size()) << " us/bit" << std::endl;
 	waitToNextBit();
 	setStateP(0);//sécuritée remetre à 0
