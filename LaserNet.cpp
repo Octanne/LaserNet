@@ -139,18 +139,19 @@ bool LASERNET_LASER::send(uint8_t data)
 	las->sendPkt(pout, &askToStop);
 	return !askToStop;
 }
-bool LASERNET_LASER::send(std::string str)
+bool LASERNET_LASER::send(std::string msg)
 {
 	if (!las || askToStop || !las->isValid())
 		return false;
 
 	packet::POut pout;
 	pout << uint8_t(1);
-	pout << str;
+	pout << msg;
 
 	las->sendPkt(pout, &askToStop);
 	return !askToStop;//on continue ? => tant qu'on a pas demandé de stop
 }
+
 bool LASERNET_LASER::send(const Tins::Packet& pkt)
 {
 	if (!las || askToStop || !las->isValid())
@@ -171,7 +172,8 @@ bool LASERNET_LASER::send(const Tins::Packet& pkt)
 	pout << (uint64_t)pkt.timestamp().seconds();//time_t =>8 byte
 	pout << (uint32_t)pkt.timestamp().microseconds();//suseconds =>4 byte
 
-	std::cout << "[LaserNet_J/laser/send] envoye du packet " << counterPacket << " (size:" << pout.size() << ")" << std::endl;
+	if(counterPacket % 100 == 0)
+		std::cout << "[LaserNet_J/laser/send] envoye du packet " << counterPacket << " (size:" << pout.size() << ")" << std::endl;
 	las->sendPkt(pout, &askToStop);
 	//TODO: if debug
 	//std::cout << "[LaserNet_J/laser/send] packet " << counterPacket << " renvoye " << pout << std::endl;
@@ -207,9 +209,10 @@ void LASERNET_LASER::process()
 }
 
 //thread Capteur-Sender
-LASERNET_CAPTEUR::LASERNET_CAPTEUR(int pinP, Tins::NetworkInterface iface)
+LASERNET_CAPTEUR::LASERNET_CAPTEUR(int pinP, Tins::NetworkInterface iface, void (*onMsgFromFriend)(std::string))
 {
 	askToStop = false;
+	this->onMsgFromFriend = onMsgFromFriend;
 	try {
 		sender = new Tins::PacketSender(iface.name());
 	}
@@ -272,6 +275,8 @@ void LASERNET_CAPTEUR::process()
 				std::string data1 = "";
 				pkt >> data1;
 				std::cout << "[LaserNet_J/capteur/process] string recu : " << data1 << std::endl;
+				if (onMsgFromFriend != nullptr)
+					onMsgFromFriend(data1);
 			}
 			else if (type == 2) {
 				sendPkt(pkt);
@@ -280,7 +285,8 @@ void LASERNET_CAPTEUR::process()
 
 		}
 		catch (std::exception& error) {
-			std::cout << "[LaserNet_J/capteur/process] Error: " << error.what() << std::endl;
+			if(error.what() != "60 seconds of inactivity")
+				std::cout << "[LaserNet_J/capteur/process] Error: " << error.what() << std::endl;
 			//todo_bug parfois :
 			//pin contient 32bits mais il etait prevu d'y en avoir 0.
 			//[LaserNet_J / capteur / process] Error: position too high
@@ -339,7 +345,7 @@ void processCapteur(LASERNET_CAPTEUR* cap) { if (cap) cap->process(); }
 
 
 //partie Transfert (classique)
-LaserNet_Transfert::LaserNet_Transfert()
+LaserNet_Transfert::LaserNet_Transfert(void (*onMsgFromFriend)(std::string))
 {
 	isRunning = false;
 
@@ -348,7 +354,7 @@ LaserNet_Transfert::LaserNet_Transfert()
 	std::cout << "filter: '" << "ip dst " + iface.ipv4_address().to_string() << "'" << std::endl;
 	//peut etre ipv6 ? (ou hw)
 	threadLas = new LASERNET_LASER(pinL, iface, config);
-	threadCap = new LASERNET_CAPTEUR(pinC, iface);
+	threadCap = new LASERNET_CAPTEUR(pinC, iface, onMsgFromFriend);
 }
 LaserNet_Transfert::~LaserNet_Transfert()
 {
@@ -368,15 +374,9 @@ void LaserNet_Transfert::exec()
 		return;
 
 	isRunning = true;
-	std::cout << "Pour Arreter: \"stop\"" << std::endl;
 
 	threadLas->start();
 	threadCap->start();
-
-	std::string cmd = "";
-	while (cmd != "stop" && cmd != "exit" && cmd != "s" && cmd != "e")
-		std::cin >> cmd;
-	stop();
 }
 bool LaserNet_Transfert::checkTransfert()
 {
@@ -415,9 +415,14 @@ void LaserNet_Transfert::stop()
 	std::cout << "[LaserNet_Transfert] stopped" << std::endl;
 }
 
+void LaserNet_Transfert::sendMsgToFriend(std::string msg)
+{ threadLas->send(msg); }
 
 
-LASERNET::LASERNET() {}
+
+LASERNET::LASERNET(void (*onMsgFromFriend)(std::string)) {
+	this->onMsgFromFriend = onMsgFromFriend;
+}
 
 LASERNET::~LASERNET()
 {
@@ -428,10 +433,8 @@ LASERNET::~LASERNET()
 }
 
 void LASERNET::stop() {
-	std::cout << "[LaserNet] stop" << std::endl;
 	if(LNT != nullptr)
 		LNT->stop();
-	std::cout << "[LaserNet] stoped" << std::endl;
 }
 
 
@@ -478,7 +481,7 @@ std::string LASERNET::setStateCmd(std::string command)
 		}
 
 		state = states::READY;
-		
+		LNT = new LaserNet_Transfert(onMsgFromFriend);
 		LNT->exec();
 		break;
 		}
@@ -509,8 +512,14 @@ std::string LASERNET::getStateInfo(bool complet) const
 				"	Stats pkt size count:" + std::to_string(stat_totalSizePkt);
 		}
 		else
-			return "Can't do anything, the transmission is OK";
+			return "The transmission is OK, help to have more informations";
 	}
 	return "Error: states unknow: " + state;
+}
+
+void LASERNET::sendMsgToFriend(std::string msg)
+{
+	if(LNT)
+		LNT->sendMsgToFriend(msg);
 }
 

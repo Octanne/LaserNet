@@ -41,9 +41,10 @@ public:
 	~LASERNET_LASER();
 	void start();
 	void close() { askToStop = true; };
+	void join() { if(thread) thread->join(); }
 	bool getIsRunning() const { return isRunning; };
 	bool send(uint8_t data);
-	bool send(std::string str);
+	bool send(std::string msg);
 	bool send(const Tins::Packet& pkt);
 
 	void process();
@@ -58,10 +59,11 @@ private:
 class LASERNET_CAPTEUR
 {
 public:
-	LASERNET_CAPTEUR(int pinP, Tins::NetworkInterface iface);
+	LASERNET_CAPTEUR(int pinP, Tins::NetworkInterface iface, void (*onMsgFromFriend)(std::string));
 	~LASERNET_CAPTEUR();
 	void start();
 	void close() { askToStop = true; };
+	void join() { if (thread) thread->join(); }
 	bool getIsRunning() { return isRunning; };
 	void process();
 private:
@@ -71,6 +73,7 @@ private:
 	Tins::PacketSender* sender = nullptr;
 	CAPTEUR* cap = nullptr;
 	int counterPacket = 0;
+	void (*onMsgFromFriend)(std::string) = nullptr;
 
 	//packet::PIn receiveData(bool *ok);//attend et donne un packet complet
 	void sendPkt(packet::PIn& pkt);//envoyer les pkts de Tins
@@ -82,12 +85,12 @@ void processCapteur(LASERNET_CAPTEUR* cap);
 
 class LaserNet_Transfert {
 public:
-	LaserNet_Transfert();
+	LaserNet_Transfert(void (*onMsgFromFriend)(std::string));
 	~LaserNet_Transfert();
 	void exec();
 	bool checkTransfert();
 	void stop();
-
+	void sendMsgToFriend(std::string msg);
 
 private:
 	bool isRunning = true;
@@ -101,15 +104,17 @@ private:
 	bool threadTinsOn = false;
 	LASERNET_LASER* threadLas = nullptr;
 	LASERNET_CAPTEUR* threadCap = nullptr;
+
 };
 
 class LASERNET {
 public:
-	LASERNET();
+	LASERNET(void (*onMsgFromFriend)(std::string));
 	~LASERNET();
 	void stop();
 	std::string setStateCmd(std::string command);
 	std::string getStateInfo(bool complet = true) const;
+	void sendMsgToFriend(std::string msg);
 	
 private:
 	enum states {
@@ -121,4 +126,5 @@ private:
 	};
 	int state = 0;
 	LaserNet_Transfert *LNT = nullptr;
+	void (*onMsgFromFriend)(std::string) = nullptr;
 };

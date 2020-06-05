@@ -123,11 +123,9 @@ void connectionConfirmed(struct mg_connection* nc)
 
 bool isConnectionConfirmed(const std::string addr)
 {
-	for (size_t i = 0; i < ncs.size(); i++) {
-		const std::string currentAddr = getAddr(ncs.at(i));
-		if (currentAddr == addr)
+	for (size_t i = 0; i < ncs.size(); i++)
+		if (getAddr(ncs.at(i)) == addr)
 			return true;
-	}
 	return false;
 }
 
@@ -140,9 +138,8 @@ void connectionClosed(struct mg_connection* nc)
 	if (!isConnectionConfirmed(addr))
 		return;
 	int clientRemoved = 0;
-	for (int i = ncs.size()-1; i > 0 ; i--) {
-		const std::string currentAddr = getAddr(ncs.at(i));
-		if (currentAddr == addr) {
+	for (size_t i = ncs.size()-1; i > 0 ; i--) {
+		if (getAddr(ncs.at(i)) == addr) {
 			ncs.erase(ncs.begin() + i);
 			clientRemoved++;
 		}
@@ -223,6 +220,7 @@ void msgReceived(struct mg_connection* nc, void* p)
 			sendLaserNetStatus(nc);
 		}
 		else if (args.rfind("chat ", 0) == 0) {//si il est en pos 0
+			LN.sendMsgToFriend(args);
 			args = args.replace(0, 4, "");//5-1
 			sendMsg(nc, "chat", args, true);
 		}
@@ -234,6 +232,10 @@ void msgReceived(struct mg_connection* nc, void* p)
 				debug = (args == "enabled" || args == "true" || args == "on");
 			}
 			sendMsg(nc, "answer", std::string("Current state for debug: ") + (debug ? "enbaled" : "disabled"));
+		}
+		else if (args == "stop") {
+			std::cout << "[WebSocket] Stopped by " << addr << std::endl;
+			isUp = false;
 		}
 		else {
 			std::string retour = LN.setStateCmd(args);
@@ -251,6 +253,16 @@ void msgReceived(struct mg_connection* nc, void* p)
 		if (debug)
 			std::cout << "[WebSocket] Error message send to " << addr << " : Invalid type" << std::endl;
 	}
+}
+
+void onMsgFromFriend(std::string msg)
+{
+	if (msg.rfind("chat", 0) == 0) {
+		msg = msg.replace(0, 4, "");//5-1
+		sendMsg(nullptr, "chat", msg, true);
+	}
+	else
+		std::cout << "[WebServer] message received from Friend unknow: \"" << msg << "\"" << std::endl;
 }
 
 void sendMsg(struct mg_connection* nc, std::string type, std::string arg, bool toEveryone)
@@ -274,7 +286,7 @@ void sendMsg(struct mg_connection* nc, std::string type, std::string arg, bool t
 		for (size_t i = 0; i < ncs.size(); i++) {
 			mg_send_websocket_frame(ncs.at(i), WEBSOCKET_OP_TEXT, buffer.GetString(), buffer.GetSize());
 		}
-		if(!isConnectionConfirmed(getAddr(nc)))//si il fait pas partit de la boucle d'avant
+		if(nc && !isConnectionConfirmed(getAddr(nc)))//si il fait pas partit de la boucle d'avant
 			mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buffer.GetString(), buffer.GetSize());
 	}
 	else
@@ -324,6 +336,7 @@ void sendLaserNetStatus(mg_connection* nc)
 	sendMsg(nc, "answer", LN.getStateInfo(), true);
 	std::cout << "[WebSocket] Answer message send to everyone (by " << getAddr(nc) << ")" << std::endl;
 }
+
 
 // Mem Usage
 static double mem_usage() {

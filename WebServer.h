@@ -19,7 +19,6 @@
 class WebServer
 {
 private:
-	bool isUp = true;
 	// Mongoose event manager
 	struct mg_mgr mgr;
 	// Mongoose connection
@@ -43,14 +42,19 @@ std::string intoString(const char* chr, int size);
 // Event handler
 static void ev_handler(struct mg_connection *nc, int ev, void *p);
 static const std::string getAddr(struct mg_connection *nc);
+
 static void connectionOpen(struct mg_connection *nc);
 static void connectionConfirmed(struct mg_connection* nc);
 static bool isConnectionConfirmed(const std::string addr);
 static void connectionClosed(struct mg_connection *nc);
+
 static void msgReceived(struct mg_connection *nc, void* p);
+static void onMsgFromFriend(std::string msg);
+
 static void sendMsg(struct mg_connection *nc, std::string type, std::string arg, bool toEveryone = false);
 static void sendStatus(struct mg_connection* nc);
 static void sendLaserNetStatus(struct mg_connection* nc);
+
 
 // Status Methods
 static double mem_usage();
@@ -58,5 +62,6 @@ static double cpu_usage();
 static double temperature();
 static int net_usage();
 static std::vector<struct mg_connection*> ncs;
+static bool isUp = true;
 #endif
 

@@ -292,7 +292,6 @@ bool CAPTEUR::waitChange(const bool *askToStop)
 		if (askToStop && *askToStop)
 			return false;
 		if (CAPTEUR::getCurrentus() >= end) {
-			std::cout << "[LaserNet_J/CAPTEUR/waitChange] error 60 seconds of inactivity" << std::endl;
 			throw std::runtime_error("60 seconds of inactivity");
 		}
 		safePause(safeTime / 10);//pause 10 fois plus courte
@@ -332,7 +331,8 @@ packet::PIn CAPTEUR::getPkt(const bool *askToStop, bool *ok)
 		int bitSkipped = waitToNextBit();
 		bool state = getStateP();
 		if (bitSkipped != 0) {
-			std::cout << "retard dans le capteur: skipped " << bitSkipped << " bits at " << pkt.size() << std::endl;
+			//TODO: if debug
+			//std::cout << "retard dans le capteur: skipped " << bitSkipped << " bits at " << pkt.size() << std::endl;
 		}
 		while (bitSkipped > 0) {
 			pkt << 0;//considéré comme éteint, ça fait moins de bugs (size)
@@ -341,7 +341,8 @@ packet::PIn CAPTEUR::getPkt(const bool *askToStop, bool *ok)
 		pkt << state;
 	}
 	int64_t stop = getCurrentus();
-	std::cout << "getPkt fini apres " << (stop-start) << " us et " << pkt.size() << " bits = " << ((stop-start)/pkt.size()) << " us/bit" << std::endl;
+	//TODO: if debug
+	//std::cout << "getPkt fini apres " << (stop-start) << " us et " << pkt.size() << " bits = " << ((stop-start)/pkt.size()) << " us/bit" << std::endl;
 	if (ok) *ok = true;//il est complet
 	return pkt;
 }
@@ -370,7 +371,8 @@ void LASER::sendPkt(const packet::POut &pkt, const bool *askToStop)
 		}
 		setStateP(pkt.bitAt(i));
 		if (bitSkipped != 0) {
-			std::cout << "retard dans le laser: skipped " << bitSkipped << " bits at " << i << std::endl;
+			//TODO: if debug
+			//std::cout << "retard dans le laser: skipped " << bitSkipped << " bits at " << i << std::endl;
 		}
 	}
 	int64_t stop = getCurrentus();
