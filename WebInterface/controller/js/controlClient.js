@@ -1,9 +1,14 @@
 var wSocket = null;
 var debugOn = false;
 var isAuth = false;
+var isConnect = false
 
 if (!window.console)
 		window.console = { log: function() {} };
+
+$(window).on("beforeunload", function() { 
+    wSocket.close();
+})
 
 function initControlClient() {
     wSocket = new WebSocket('wss://' + location.host + '/wss');
@@ -15,8 +20,10 @@ function initControlClient() {
 
 
 function socketOnOpen(ev) {
+	isConnect = true;
 	if (debugOn)
 		console.log(ev);
+	addLog("info","Connexion effectuée, !auth 'secretkey' pour vous authentifier");
 }
 function socketOnError(ev) {
 	if (debugOn)
@@ -34,7 +41,9 @@ function socketOnError(ev) {
 function socketOnClose(ev) {
     if (debugOn)
 		console.log(ev);
-	addLog("debug", "Socket Closed because: \""+ev.reason+"\"");
+	addLog("info","Connexion interrompue, !connect pour vous connecter");
+	isAuth = false;
+	isConnect = false;
 }
 function socketReceiveMessage(ev) {
 	var webMessage = JSON.parse(ev.data);
@@ -73,26 +82,32 @@ function socketReceiveMessage(ev) {
 		document.getElementById("syncStat").value = syncStatus;
 		document.getElementById("webStat").value = webStatus;
 	}
-	if(webMessage.type == "consoleUP"){
+	else if(webMessage.type == "consoleUP"){
 		addLog("info", "Console is up: \""+webMessage.msg+"\"");
 	}
-	if(webMessage.type == "error"){
+	else if(webMessage.type == "error"){
 		addLog("error", "[WebSocket] : " + webMessage.msg);
 	}
-	if(webMessage.type == "answer"){
+	else if(webMessage.type == "answer"){
 		addLog("info", webMessage.msg);
 	}
-	if(webMessage.type == "managment"){
-		if(webMessage.msg == "connected")launchAutoRefresh();
-		if(webMessage.msg == "disconnected")return;
-	}
-	if(webMessage.type == "connection"){
-		isAuth = true;
+	else if(webMessage.type == "managment"){
+		if(webMessage.msg == "connected"){
+			launchAutoRefresh();
+			isAuth = true;
+		}else if(webMessage.msg == "disconnected"){
+			wSocket.close();
+			isAuth = false;
+		}
+	}else if(webMessage.type == "connection"){
 		addLog("info", "[Connection] "+webMessage.msg);
-	}
-	if(webMessage.type == "chat"){
+	}else if(webMessage.type == "chat"){
 		addLog("info", "[Chat] "+webMessage.msg);
+	}else{
+		addLog("error", "Type inconnue : " + webMessage.type);
+		return;
 	}
+		
 };
 
 function sendMessage(type, arg = "nothing"){

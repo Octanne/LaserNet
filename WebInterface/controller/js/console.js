@@ -148,6 +148,8 @@ function newCommand(command) {
                    +"    !auth : s'authentifier\n"
 				   +"    !debug : switch debug mod\n"
 				   +"    !refresh : refresh widgets\n"
+				   +"    !connect : start connection\n"
+				   +"    !disconnect : stop connection\n"
 				   +"    [commande] : envoie une commande du RaspberryPi\n"
                    +"    <a href='./#Documentation' style='color: -webkit-link;'>Obtenir plus d'informations</a>");
                 break;
@@ -176,6 +178,20 @@ function newCommand(command) {
 			case "!refresh":
 				sendMessage("status", "nothing");
 				addLog("info", "Rafraichissement des widgets!");
+				break;
+			case "!disconnect":
+				if(isConnect){
+					wSocket.close();
+				}else{
+					addLog("error", "Aucune connection active!");
+				}
+				break;
+			case "!connect":
+				if(!isConnect){
+					initControlClient();
+				}else{
+					addLog("error", "Connection déjà active!");
+				}
 				break;
 			case "!clear":
 				$(".console_line").remove("");
