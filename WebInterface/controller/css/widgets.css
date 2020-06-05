@@ -57,22 +57,16 @@
 .celsius::after { content: "°C"; }
 .percent::after, .progress-bar::after { content: "%"; }
 
-
-
 .inline-widgetinfo {
     display: flex;
     flex-direction: row;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+
 }
-output[type="boolean"] {
-    display: flex;
-    width: 0;
-}
-.inline-widgetinfo * {
-    font-size: 0;
-}
-output[type="boolean"]::before {
-    font-size: initial;
-}
+output[type="boolean"] { font-size: 0; }
+output[type="boolean"]::before { font-size: initial; }
 output[type="boolean"]:not([value="true"])::before { content:"INACTIF"; }
 output[type="boolean"][value="true"]::before { content:"ACTIF"; }
 

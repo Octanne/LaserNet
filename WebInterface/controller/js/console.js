@@ -115,11 +115,13 @@ function addLog(type, arg) {
                       +"<p>"+arg+"</p>"
                       +"</div>");
 
-    if (consoleScrollEnd)
+    if (debugOn)console.log("addLog");
+    if (consoleScrollEnd) {
         scrollToTheBottom();
+    }
 }
 function scrollToTheBottom() {
-    var maxScroll = $("#console").scrollHeight - $("#console").outerHeight();
+    var maxScroll = $("#console")[0].scrollHeight - $("#console").outerHeight();
     $("#console").animate({ scrollTop: maxScroll }, 0);//animated with 2nd valueat 100
     //document.getElementById("console").scrollTo(0, maxScroll);//scroll to the bottom (doesn't work with edge 18204)
 }
@@ -136,21 +138,54 @@ function splitLine(line, separation) {
     return lineSplit;
 }
 function newCommand(command) {
-    var args = splitLine(command, " ");
-    command = args.shift().toLowerCase();
-    switch (command) {
-        case "help":
-        case "?":
-            addLog("help", "Aide de la console :\n"
-                   +"    help : affiche cet aide\n"
-                   +"    sendMessage [type] [args] : envoie un message au raspberrypi\n"
+    if(command.startsWith("!")) {
+        var args = splitLine(command, " ");
+        command = args.shift().toLowerCase();
+        switch(command) {
+            case "!help":
+                addLog("help", "Aide de la console :\n"
+                   +"    !help : affiche cette aide\n"
+                   +"    !auth : s'authentifier\n"
+				   +"    !debug : switch debug mod\n"
+				   +"    !refresh : refresh widgets\n"
+				   +"    [commande] : envoie une commande du RaspberryPi\n"
                    +"    <a href='./#Documentation' style='color: -webkit-link;'>Obtenir plus d'informations</a>");
-            break;
-        case "sendmessage":
-            sendMessage(args.shift(), args);
-            break;
-        default:
-            addLog("error", "Commande inconnue : \"" + command + "\"");
-            break;
+                break;
+            case "!auth":
+				if(args.length > 0){
+					var authMessage = {
+					type: "auth",
+					date: Date.now().toString(),
+					key: args[0]
+					};
+					wSocket.send(JSON.stringify(authMessage).toString());
+				}else{
+					addLog("error", "Veulliez préciser la secret key : !auth 'secretkey'");
+				}
+				break;
+			case "!debug":
+				if(debugOn){
+					debugOn = false;
+					addLog("info", "Message de DEBUG désactivé!");
+				}
+				else {
+					debugOn = true;
+					addLog("info", "Message de DEBUG activé!");
+				}
+				break;
+			case "!refresh":
+				sendMessage("status", "nothing");
+				addLog("info", "Rafraichissement des widgets!");
+				break;
+			case "!clear":
+				$(".console_line").remove("");
+				addLog("info", "La console a était vidé!");
+				break;
+			default:
+                addLog("error", "Commande de la console inconnue : \"" + command + "\"");
+                break;
+        }
     }
+    else
+        sendMessage("command", command);
 }

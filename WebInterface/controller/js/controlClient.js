@@ -16,7 +16,6 @@ function initControlClient() {
 function socketOnOpen(ev) {
 	if (debugOn)
 		console.log(ev);
-	addLog("debug", "Socket Open "+ev);
 	launchAutoRefresh();
 }
 function socketOnError(ev) {
@@ -39,8 +38,9 @@ function socketOnClose(ev) {
 }
 function socketReceiveMessage(ev) {
 	var webMessage = JSON.parse(ev.data);
+	//addLog("info","DATA : " + ev.data);
 	//console.log("[WebSocket] new data incoming : "+webMessage.type);
-	addLog("info", "[WebSocket] new data incoming : "+webMessage.type);
+	if (debugOn)addLog("debug", "[WebSocket] new data incoming : "+webMessage.type);
 	
 	
 	if(webMessage.type == "sysStatus"){
@@ -56,17 +56,11 @@ function socketReceiveMessage(ev) {
 		console.log("CPU Usage : " + cpuUsage + "% | Ram Usage : " + ramUsage + "%");
 		console.log("Web : " + webStatus + " | Sync : " + syncStatus);
 		console.log("---------------------------------------------");*/
-		addLog("info", "---------------------------------------------"
-			   +"Temp : " + temp + "°C | Network : " + netUsage + "%"
-			   +"CPU Usage : " + cpuUsage + "% | Ram Usage : " + ramUsage + "%"
-			   +"Web : " + webStatus + " | Sync : " + syncStatus
-			   +"---------------------------------------------");
+		if (debugOn)addLog("info", "[WebSocket] new SysStatus receive.");
 		
 		document.getElementById("temperature").innerHTML = temp;
 		setProgressBarValue(document.getElementById("cpuUsage"), cpuUsage);
 		setProgressBarValue(document.getElementById("ramUsage"), ramUsage);
-		//document.getElementById("netUsageTX").innerHTML = "<div id=\"netUsageRX\" class=\"progress-bar\" style=\"width:0%;\">"+netUsage+"</div>"+(100-netUsage);
-		//document.getElementById("netUsageRX").style.width = netUsage+"%";
 		setProgressBarValue(document.getElementById("netUsageRX"), netUsage);
 		
 		if(temp <= 45)
@@ -76,20 +70,6 @@ function socketReceiveMessage(ev) {
 		else
 			document.getElementById("temperature").setAttribute("color", "red");
 
-		/*if(syncStatus){
-			document.getElementById("syncStat").class = "green";
-			document.getElementById("syncStat").innerHTML = "ACTIVE";
-		}else{
-			document.getElementById("syncStat").class = "red";
-			document.getElementById("syncStat").innerHTML = "INACTIF";
-		}
-		if(webStatus){
-			document.getElementById("webStat").class = "green";
-			document.getElementById("webStat").innerHTML = "ACTIVE";
-		}else{
-			document.getElementById("webStat").class = "red";
-			document.getElementById("webStat").innerHTML = "INACTIF";
-		}*/
 		document.getElementById("syncStat").value = syncStatus;
 		document.getElementById("webStat").value = webStatus;
 	}
@@ -97,8 +77,16 @@ function socketReceiveMessage(ev) {
 		addLog("info", "Console is up: \""+webMessage.msg+"\"");
 	}
 	if(webMessage.type == "error"){
-		//console.log("[WebSocket] ERROR : " + webMessage.msg);
 		addLog("error", "[WebSocket] : " + webMessage.msg);
+	}
+	if(webMessage.type == "answer"){
+		addLog("info", webMessage.msg);
+	}
+	if(webMessage.type == "connection"){
+		addLog("info", "[Connection] "+webMessage.msg);
+	}
+	if(webMessage.type == "chat"){
+		addLog("info", "[Chat] "+webMessage.msg);
 	}
 };
 
@@ -108,9 +96,8 @@ function sendMessage(type, arg = "nothing"){
 		return false;
 	}
 	var webMessage = {
-		secretKey: "secretKey",
 		date: Date.now().toString(),
-		order: type,
+		type: type,
 		args: arg
 	};
 	wSocket.send(JSON.stringify(webMessage).toString());

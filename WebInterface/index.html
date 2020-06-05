@@ -2,12 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>ISN - LaserNet Project</title>
-    
+    <title>Gestion - LaserNet Project</title>
+
     <link rel="stylesheet" href="include/css/body.css">
     <link rel="stylesheet" href="include/css/darkmode.css">
+    <style type="text/css">
+        #pageController {
+            max-height: calc(100% - 32px);
+        }
+    </style>
 
-    <script type="text/javascript" src="include/js/script.js"></script>
     <script type="text/javascript" src="include/js/darkmode.js"></script>
     <script type="text/javascript" src="controller/js/console.js"></script>
     <script type="text/javascript" src="include/js/jquery-1.12.0.min.js"></script>
@@ -26,188 +30,18 @@
         <div id="sidebar">
             <nav id="sommaire" class="widget">
                 <h3>Navigation</h3>
-                <ul>
-                    <li class="menu_link" id="menuPresentation" onclick="openPage(this);">Presentation</li>
-                    <li class="menu_link" id="menuController" onclick="openPage(this);">Controller</li>
-                    <li class="menu_link" id="menuDocumentation" onclick="openPage(this);">Documentation</li>
-                    <li class="menu_link" id="menuCredits" onclick="openPage(this);">Credits</li>
-                </ul>
+                <p>Vous êtes actuellement sur la page dédiée à la connection avec les RaspberryPi</p>
+                <a href="https://files.octanne.eu/web/ISN%20LaserNet">Retour à la présentation</a>
             </nav>
             <div id="raspberrypi_status" class="widget"></div>
             <div id="laser_status" class="widget"></div>
             <div id="credit" class="widget"></div>
         </div>
         
-        <div id="page">
-            <!-- Presentation -->
-            <div class="pageContent" id="pagePresentation">
-                <h2>Presentation</h2>
-                <section>
-                    <h3>Boite RaspberryPi</h3>
-                    <div>
-                        <p>Nous avons aussi travaillé sur la construction d’une coque de support pour les deux raspberry PI.</p>
-                        <img src="https://lh3.googleusercontent.com/u/0/d/1Lyh5-5yFmCystvkz-LfeMD9zWHb9G7mY=w1024-h1024-iv2" alt="Rendu boitier 3D RaspberryPi">
-                        <p>Rendu du boitier réalisé avec <a href="https://www.autodesk.com/products/fusion-360">Fusion360</a></p>
-                    </div>
-                </section>
-                <section>
-                    <h3>Principe LaserNet</h3>
-                    <div>
-                        <p>LaserNet est un projet de transfert de données entre deux RaspberryPi.</p>
-                        <p>Pour ce faire, chaque Raspberry dispose d'un capteur (KY-018) et d'un laser (KY-008, longueur d'onde: 650nm) afin de communiquer avec l'autre RaspberryPi.</p>
-                        <p>La transmission se fait en binaire via les pins GPIO du RaspberryPi (disponibles grâce à l'API WiringPi),
-                        mais pour simplifier le programme nous utilisons des objets tels que les "String" et les "Array" qui sont ensuite transformés en chaîne binaire qui seront décodés à l'arrivée.</p>
-                        
-                        <p>Pour commencer nous avons fait un programme de test afin d'envoyer un simple text. Celui ci est comparable à un télégraphe informatisé car les Raspberry n'était reliés que par câble.</p>
-                        <p></p>
-                        <p>Afin d'intéragir avec le réseau nous avons utilisé l'API LibTins. Cette librairie permet de "sniffer" un réseau afin d'en extraire les paquets qui transitent par l'appareil.</p>
-                        <p>Pour avoir notre interface réseau (afin d'envoyer des paquets), nous avons dû émuler une "dummy networkinterface" sur les raspberry Pi (une interface réseau qui ne posséde aucune interface hardware).</p>
-                    </div>
-                </section>
-                <section>
-                    <h3>Les Technologies</h3>
-                    <div>
-                        <p>Afin de réaliser le projet nous avons fait :</p>
-                        <ul>
-                            <li>De l'électronique : connexion et gestion des lasers</li>
-                            <li>Du C++ : bonne connaissance, partie LibTins et WiringPi dans les RaspberryPi</li>
-                            <li>Du JavaScript, HTML, CSS : afin de controller les RaspberryPi via un site sans avoir l'application Putty</li>
-                            <li><a href="#Credits">En savoir plus</a></li>
-                        </ul>
-                    </div>
-                </section>
-                <section>
-                    <h3>Objectif</h3>
-                    <div>
-                        <p>Un RaspberryPi connecté au réseau (box, clé 4G, ordinateur) répondant aux demandes de l'autre RaspberryPi.</p>
-                        <p>Un RaspberryPi connecté à un ordinateur n'ayant aucun autre réseau disponible (ordinateur déconnecté).</p>
-                        <p>Les RaspberryPi vont servir de pont pour le réseau afin de permetre à l'ordinateur déconnecté d'avoir internet.</p>
-                        <p>Simuler une carte réseau avec l'un des RaspberryPi afin qu'un ordinateur connecté à lui puisse aller sur internet (échanges des paquets réseau via les raspberryPi</p>
-                        
-                        <p>Cette communication par laser est plus utile que par câble pour :</p>
-                        <ul> 
-                            <li>Communiquer dans l'espace</li>
-                            <li>Communiquer sur de longues distances</li>
-                            <li>Sécuriser la transmission (un observateur coupera la connexion car le signal du laser ne passer plus)</li>
-                        </ul>
-                    </div>
-                </section>
-                <section>
-                    <h3>Limitations importantes</h3>
-                    <div>
-                        <p>Les RaspberryPi ne sont pas asser rapide, avec 1 microseconde (us) par bit (actuellement: 2000us) le débit ne serait que de 1Mbit/s</p>
-                        <p>Retards dû au même problème</p>
-                        <p>Putty est nécessaire car le site a besoin de beaucoup d'amélioration</p>
-                        <p>"WiringPi deprecated" : la question était de savoir si il fallait changer de librairie mais il se trouve que wiringPi est suffisant</p>
-                    </div>
-                </section>
-                
-                <section>
-                    <h3>Liens</h3>
-                    <div>
-                        <ul>
-                            Github REPO
-                            <li><a href="https://github.com/Octanne/LaserNet">LaserNet</a> (communication des RaspberryPi)</li>
-                            <li><a href="https://github.com/Octanne/WebServer">WebServer</a> (communication avec le site)</li>
-                        </ul>
-                    </div>
-                </section>
-            </div>
-            <!-- Controller -->
-            <div class="pageContent" id="pageController">
-                <h2>Controller</h2>
-                <a href="https://files.octanne.eu/web/ISN%20LaserNet/controller.html" title="Gestion des RaspberryPi seulement">Console uniquement</a>
-                <section id="console_box"></section>
-            </div>
-            <!-- Docs -->
-            <div class="pageContent" id="pageDocumentation">
-                <h2>Documentation</h2>
-                <section>
-                    <h3>Section N°1</h3>
-                    <div>
-                        <p>Je vous présente ici le magnifique contenu de la section numéro 1. Ainsi, ici vous pourrez retrouver différentes informations.</p>
-                        <p>Biensûr comme le site est encore en construction les sections sont remplis de texte inutile tel que ce que tu lis actuellement.</p>
-                        <p>Il n'y a aussi du coup pas plusieurs texte différents mais un seul qui a subit le sors du Ctrl+C, Ctrl+V.</p>
-                    </div>
-                </section>
-                <section>
-                    <h3>Section N°2</h3>
-                    <div>
-                        <p>Je vous présente ici le magnifique contenu de la section numéro 1. Ainsi, ici vous pourrez retrouver différentes informations.</p>
-                        <p>Biensûr comme le site est encore en construction les sections sont remplis de texte inutile tel que ce que tu lis actuellement.</p>
-                        <p>Il n'y a aussi du coup pas plusieurs texte différents mais un seul qui a subit le sors du Ctrl+C, Ctrl+V.</p>
-                    </div>
-                </section>
-                <section>
-                    <h3>Section N°3</h3>
-                    <div>
-                        <p>Je vous présente ici le magnifique contenu de la section numéro 1. Ainsi, ici vous pourrez retrouver différentes informations.</p>
-                        <p>Biensûr comme le site est encore en construction les sections sont remplis de texte inutile tel que ce que tu lis actuellement.</p>
-                        <p>Il n'y a aussi du coup pas plusieurs texte différents mais un seul qui a subit le sors du Ctrl+C, Ctrl+V.</p>
-                    </div>
-                </section>
-                <section>
-                    <h3>Section N°4</h3>
-                    <div>
-                        <p>Je vous présente ici le magnifique contenu de la section numéro 1. Ainsi, ici vous pourrez retrouver différentes informations.</p>
-                        <p>Biensûr comme le site est encore en construction les sections sont remplis de texte inutile tel que ce que tu lis actuellement.</p>
-                        <p>Il n'y a aussi du coup pas plusieurs texte différents mais un seul qui a subit le sors du Ctrl+C, Ctrl+V.</p>
-                    </div>
-                </section>
-                <section>
-                    <h3>SimLine</h3>
-                    <div>
-                        <p>SimLine est un projet de comparaison de chaînes de caractères (similaire à Anagene)</p>
-                        <p>Il a été réalisé entre le 17/02/2020 et le 23/02/2020</p>
-                        <p>Accessible en ligne via <a href="https://files.octanne.eu/web/SimLine/">files.octanne.eu/web/SimLine</a></p>
-                    </div>
-                </section>
-            </div>
-            <!-- Credits -->
-            <div class="pageContent" id="pageCredits">
-                <h2>Credits</h2>
-                <section>
-                    <h3>Les différentes bibliothéques et technologies utilisées :</h3>
-                    <div class="alinea" style="text-align: justify;">
-                        <p>Le projet « LaserNet » a été développé par Corentin Levalet et Jérôme Lécuyer. Le software de contrôle du système laser ainsi que le serveur web ont été développé en C++,
-                        mais le « backend » de la page web est quant à lui développé en JavaScript pour la parti client. Ainsi nous avons utilisé différentes librairies et technologies au sein de se projet que vous pouvez
-                        retrouver ci-dessous</p>
-                        <ul style="list-style:'> '; padding-left: 1em;">
-                            <li>Les Technologies :
-                                <ul style="list-style:'- '; margin-top: 0;">
-                                    <li>JavaScript (Scripting Language)</li>
-                                    <li>HTML / CSS (Structure & Style Language)</li>
-                                    <li>C++ (OOP Language)</li>
-                                </ul>
-                            </li>
-                            <li>Les Librairies :
-                                <ul style="list-style:'- '; margin-top: 0;">
-                                    <li>RapidJson (JSON Parser Lib)</li>
-                                    <li>Libtins (Network Lib)</li>
-                                    <li>Mongoose (Network Lib)</li>
-                                </ul>
-                            </li>
-                        </ul>
-                        <p>Les droits des différentes bibliothèques ci-dessus appartiennent à leurs propriétaires respectif.</p>
-                    </div>
-                </section>
-            </div>
-            
-            <!-- Presentation -->
-            <div class="pageContent" id="pageSecret">
-                <h2>Secret</h2>
-                <section>
-                    <h3>Section N°1</h3>
-                    <div>
-                        <p>Ceci est une page secrete.</p>
-                    </div>
-                </section>
-            </div>
+        <div class="pageContent" id="pageController">
+            <section id="console_box"></section>
         </div>
         
     </div>
 </body>
 </html>
-<!--dark mode:
-            <img src="https://media.discordapp.net/attachments/439390947084861442/681639735986487311/Screenshot_20200225-001240_Samsung_Internet.jpg">
-            <img src="https://cdn.discordapp.com/attachments/439390947084861442/681640013976567932/Screenshot_20200225-001358_Samsung_Internet.jpg">-->
