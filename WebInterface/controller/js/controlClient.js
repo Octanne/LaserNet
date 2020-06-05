@@ -1,5 +1,6 @@
 var wSocket = null;
 var debugOn = false;
+var isAuth = false;
 
 if (!window.console)
 		window.console = { log: function() {} };
@@ -16,7 +17,6 @@ function initControlClient() {
 function socketOnOpen(ev) {
 	if (debugOn)
 		console.log(ev);
-	launchAutoRefresh();
 }
 function socketOnError(ev) {
 	if (debugOn)
@@ -82,7 +82,12 @@ function socketReceiveMessage(ev) {
 	if(webMessage.type == "answer"){
 		addLog("info", webMessage.msg);
 	}
+	if(webMessage.type == "managment"){
+		if(webMessage.msg == "connected")launchAutoRefresh();
+		if(webMessage.msg == "disconnected")return;
+	}
 	if(webMessage.type == "connection"){
+		isAuth = true;
 		addLog("info", "[Connection] "+webMessage.msg);
 	}
 	if(webMessage.type == "chat"){
