@@ -2,6 +2,7 @@ var wSocket = null;
 var debugOn = false;
 var isAuth = false;
 var isConnect = false
+var intervalStatus = null;
 
 if (!window.console)
 		window.console = { log: function() {} };
@@ -44,13 +45,11 @@ function socketOnClose(ev) {
 	addLog("info","Connexion interrompue, !connect pour vous connecter");
 	isAuth = false;
 	isConnect = false;
+	clearInterval(intervalStatus);
 }
 function socketReceiveMessage(ev) {
 	var webMessage = JSON.parse(ev.data);
-	//addLog("info","DATA : " + ev.data);
-	//console.log("[WebSocket] new data incoming : "+webMessage.type);
 	if (debugOn)addLog("debug", "[WebSocket] new data incoming : "+webMessage.type);
-	
 	
 	if(webMessage.type == "sysStatus"){
 		var temp = webMessage.temp;
@@ -93,7 +92,7 @@ function socketReceiveMessage(ev) {
 	}
 	else if(webMessage.type == "managment"){
 		if(webMessage.msg == "connected"){
-			launchAutoRefresh();
+			interval = launchAutoRefresh();
 			isAuth = true;
 		}else if(webMessage.msg == "disconnected"){
 			wSocket.close();
@@ -124,7 +123,7 @@ function sendMessage(type, arg = "nothing"){
 }
 function launchAutoRefresh(){
 	sendMessage("status");
-	setInterval(sendMessage, 4000, "status", "nothing");
+	intervalStatus = setInterval(sendMessage, 4000, "status", "nothing");
 }
 
 
