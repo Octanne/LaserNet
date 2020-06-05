@@ -139,7 +139,7 @@ void connectionClosed(struct mg_connection* nc)
 	if (!isConnectionConfirmed(addr))
 		return;
 	int clientRemoved = 0;
-	for (size_t i = ncs.size()-1; i > 0 ; i--) {
+	for (size_t i = ncs.size()-1; i >= 0 ; i--) {
 		if (getAddr(ncs.at(i)) == addr) {
 			ncs.erase(ncs.begin() + i);
 			clientRemoved++;

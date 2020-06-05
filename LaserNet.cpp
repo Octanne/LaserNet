@@ -285,7 +285,7 @@ void LASERNET_CAPTEUR::process()
 
 		}
 		catch (std::exception& error) {
-			if(error.what() != "60 seconds of inactivity")
+			if(std::string(error.what()) != "60 seconds of inactivity")
 				std::cout << "[LaserNet_J/capteur/process] Error: " << error.what() << std::endl;
 			//todo_bug parfois :
 			//pin contient 32bits mais il etait prevu d'y en avoir 0.
@@ -505,7 +505,7 @@ std::string LASERNET::getStateInfo(bool complet) const
 		return printAllInterfaces() + "Quelle interface ? ('non' pour celle par defaut)";
 	case states::READY:
 		if (complet) {
-			return std::string("The transmisison is OK (" + WiringPiOk) + std::string("," + TinsOk) + ")\n" +
+			return std::string("The transmisison is OK (") + (WiringPiOk?"true":"false") + "," + (TinsOk?"true":"false") + ")\n" +
 				"	Pin Capteur: " + std::to_string(pinC) + "\n" +
 				"	Pin Laser: " + std::to_string(pinL) + "\n" +
 				"	Interface: " + toString(iface.friendly_name()) + "\n" +
