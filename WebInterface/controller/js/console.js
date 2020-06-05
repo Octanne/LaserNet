@@ -163,7 +163,7 @@ function newCommand(command) {
 						};
 						wSocket.send(JSON.stringify(authMessage).toString());
 					}else{
-						addLog("error", "Veulliez préciser la secret key : !auth 'secretkey'");
+						addLog("error", "Veulliez préciser la secret key : !auth [secretkey]");
 					}
 				}else{
 					addLog("error", "Veulliez lancer une connexion avant : !connect");
@@ -199,7 +199,7 @@ function newCommand(command) {
 				break;
 			case "!clear":
 				$(".console_line").remove("");
-				addLog("info", "La console a était vidé!");
+				addLog("info", "La console a été vidée!");
 				break;
 			default:
                 addLog("error", "Commande de la console inconnue : \"" + command + "\"");

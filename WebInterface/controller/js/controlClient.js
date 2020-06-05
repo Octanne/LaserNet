@@ -24,7 +24,7 @@ function socketOnOpen(ev) {
 	isConnect = true;
 	if (debugOn)
 		console.log(ev);
-	addLog("info","Connexion effectuée, !auth 'secretkey' pour vous authentifier");
+	addLog("info","Connexion effectuée, !auth [secretkey] pour vous authentifier");
 }
 function socketOnError(ev) {
 	if (debugOn)
@@ -49,13 +49,13 @@ function socketOnClose(ev) {
 }
 function socketReceiveMessage(ev) {
 	var webMessage = JSON.parse(ev.data);
-	if (debugOn)addLog("debug", "[WebSocket] new data incoming : "+webMessage.type);
+	if (debugOn)addLog("debug", "[WebSocket] new data en approche : "+webMessage.type);
 	
 	if(webMessage.type == "sysStatus"){
 		var temp = webMessage.temp;
-		var cpuUsage = webMessage.cpuUsage;
-		var ramUsage = webMessage.ramUsage;
-		var netUsage = webMessage.netUsage;
+		var cpuUsage = parseFloat(webMessage.cpuUsage).toFixed(2);
+		var ramUsage = parseFloat(webMessage.ramUsage).toFixed(1);
+		var netUsage = parseFloat(webMessage.netUsage).toFixed(1);
 		
 		var webStatus = webMessage.webStatus;
 		var syncStatus = webMessage.syncStatus;
@@ -64,7 +64,7 @@ function socketReceiveMessage(ev) {
 		console.log("CPU Usage : " + cpuUsage + "% | Ram Usage : " + ramUsage + "%");
 		console.log("Web : " + webStatus + " | Sync : " + syncStatus);
 		console.log("---------------------------------------------");*/
-		if (debugOn)addLog("info", "[WebSocket] new SysStatus receive.");
+		if (debugOn)addLog("info", "[WebSocket] new SysStatus reçu.");
 		
 		document.getElementById("temperature").innerHTML = temp;
 		setProgressBarValue(document.getElementById("cpuUsage"), cpuUsage);
@@ -99,7 +99,7 @@ function socketReceiveMessage(ev) {
 			isAuth = false;
 		}
 	}else if(webMessage.type == "connection"){
-		addLog("info", "[Connection] "+webMessage.msg);
+		addLog("info", "[Connexion] "+webMessage.msg);
 	}else if(webMessage.type == "chat"){
 		addLog("info", "[Chat] "+webMessage.msg);
 	}else{
@@ -111,7 +111,7 @@ function socketReceiveMessage(ev) {
 
 function sendMessage(type, arg = "nothing"){
 	if (!wSocket) {
-		addLog("error", "[WebSocket] : not initialized");
+		addLog("error", "[WebSocket] : non initialisé");
 		return false;
 	}
 	var webMessage = {
