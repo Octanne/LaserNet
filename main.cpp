@@ -7,8 +7,9 @@ using namespace std;
 void wServer(WebServer* wS) {
 	do {
 		try {
-			wS->launch();
-			break;//on a arrete correctement
+			bool stop = wS->launch();
+			if(stop)
+				break;//on a arrete correctement
 		}
 		catch (const exception& error) {
 			cout << "Error: WebServer and LaserNet suddenly stopped. " << error.what() << endl

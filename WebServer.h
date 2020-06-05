@@ -33,7 +33,7 @@ public:
 	WebServer();
 	~WebServer();
 
-	void launch();
+	bool launch();
 	void stop();
 };
 // Struct containing setings for how to server HTTP with mongoose
@@ -63,5 +63,6 @@ static double temperature();
 static int net_usage();
 static std::vector<struct mg_connection*> ncs;
 static bool isUp = true;
+static bool restartAfterStop = false;
 #endif
 

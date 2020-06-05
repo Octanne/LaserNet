@@ -22,8 +22,10 @@ WebServer::WebServer()
 }
 WebServer::~WebServer() {}
 
-void WebServer::launch() {
+bool WebServer::launch() {
 	
+	restartAfterStop = false;
+
 	std::cout << "Starting WebServer on port " << port << std::endl;
 	
 	// Start Web Server
@@ -32,7 +34,7 @@ void WebServer::launch() {
 	// If connection fails
 	if (ncServ == NULL) {
 		std::cout << "Failed to create listener : " << err << std::endl;
-		return;
+		return true;
 	}
 
 	// Set up HTTP server options
@@ -48,6 +50,8 @@ void WebServer::launch() {
 
 	//Free up all memory allocated
 	mg_mgr_free(&mgr);
+
+	return !restartAfterStop;//si on restart alors on stop pas
 }
 
 void WebServer::stop() { isUp = false; LN->stop(); }
@@ -139,9 +143,9 @@ void connectionClosed(struct mg_connection* nc)
 	if (!isConnectionConfirmed(addr))
 		return;
 	int clientRemoved = 0;
-	for (size_t i = ncs.size()-1; i >= 0 ; i--) {
-		if (getAddr(ncs.at(i)) == addr) {
-			ncs.erase(ncs.begin() + i);
+	for (size_t i = ncs.size(); i > 0 ; i--) {
+		if (getAddr(ncs.at(i-1)) == addr) {
+			ncs.erase(ncs.begin() + i - 1);
 			clientRemoved++;
 		}
 	}
@@ -224,28 +228,34 @@ void msgReceived(struct mg_connection* nc, void* p)
 				"status: display the current status of LaserNet\n"
 				"chat [msg]: send a message to everyone\n"
 				"debug (enabled/disabled): display/edit the current status of debuging c++ part\n"
-				"stop: stop the process");
+				"stop: stop the process\n"
+				"restart: restart the process");
 		}
 		else if (args == "status") {
 			sendLaserNetStatus(nc);
 		}
 		else if (args.rfind("chat ", 0) == 0) {//si il est en pos 0
 			LN->sendMsgToFriend(args);
-			args = args.replace(0, 4, "");//5-1
+			args = args.replace(0, 5, "");//5 (espace compris)
 			sendMsg(nc, "chat", args, true);
 		}
 		else if (args.rfind("debug", 0) == 0) {
-			args.replace(0, 4, "");//5-1
+			args.replace(0, 5, "");//5
 			if (args.size() > 0) {
 				if(args.rfind(" ", 0) == 0)
-					args.replace(0, 1, "");//5-1
-				debug = (args == "enabled" || args == "true" || args == "on");
+					args.replace(0, 1, "");
+				debug = (args == "enabled" || args == "enable" || args == "true" || args == "on");
 			}
 			sendMsg(nc, "answer", std::string("Current state for debug: ") + (debug ? "enbaled" : "disabled"));
 		}
 		else if (args == "stop") {
 			std::cout << "[WebSocket] Stopped by " << addr << std::endl;
 			isUp = false;
+		}
+		else if (args == "restart") {
+			std::cout << "[WebSocket] Restarted by " << addr << std::endl;
+			isUp = false;
+			restartAfterStop = true;
 		}
 		else {
 			std::string retour = LN->setStateCmd(args);
