@@ -1,6 +1,6 @@
 #include "WebServer.h"
 
-LASERNET LN;
+LASERNET *LN = nullptr;
 bool debug = false;
 
 
@@ -18,6 +18,7 @@ WebServer::WebServer()
 	// Set port
 	port = "8000";
 
+	LN = new LASERNET(onMsgFromFriend);
 }
 WebServer::~WebServer() {}
 
@@ -40,7 +41,7 @@ void WebServer::launch() {
 	s_http_server_opts.document_root = "/home/pi/Desktop/WebInterface";
 	s_http_server_opts.enable_directory_listing = "no";
 
-	std::cout << LN.setStateCmd("WebServer") << std::endl;
+	std::cout << LN->setStateCmd("WebServer") << std::endl;
 
 	while(isUp)
 		mg_mgr_poll(&mgr, 1000);
@@ -49,7 +50,7 @@ void WebServer::launch() {
 	mg_mgr_free(&mgr);
 }
 
-void WebServer::stop() { isUp = false; LN.stop(); }
+void WebServer::stop() { isUp = false; LN->stop(); }
 
 std::string intoString(const char* a, int size)
 {
@@ -117,7 +118,7 @@ void connectionConfirmed(struct mg_connection* nc)
 
 	sendMsg(nc, "connection", "New client is here (total:" + std::to_string(ncs.size()) + ")", true);
 
-	sendMsg(nc, "answer", LN.getStateInfo());//donne l'état de LaserNet actuel
+	sendMsg(nc, "answer", LN->getStateInfo());//donne l'état de LaserNet actuel
 	std::cout << "[WebSocket] Answer message send to " << addr << std::endl;
 }
 
@@ -220,7 +221,7 @@ void msgReceived(struct mg_connection* nc, void* p)
 			sendLaserNetStatus(nc);
 		}
 		else if (args.rfind("chat ", 0) == 0) {//si il est en pos 0
-			LN.sendMsgToFriend(args);
+			LN->sendMsgToFriend(args);
 			args = args.replace(0, 4, "");//5-1
 			sendMsg(nc, "chat", args, true);
 		}
@@ -238,7 +239,7 @@ void msgReceived(struct mg_connection* nc, void* p)
 			isUp = false;
 		}
 		else {
-			std::string retour = LN.setStateCmd(args);
+			std::string retour = LN->setStateCmd(args);
 			if (retour == "") {
 				sendLaserNetStatus(nc);
 			}
@@ -333,7 +334,7 @@ void sendStatus(mg_connection* nc)
 
 void sendLaserNetStatus(mg_connection* nc)
 {
-	sendMsg(nc, "answer", LN.getStateInfo(), true);
+	sendMsg(nc, "answer", LN->getStateInfo(), true);
 	std::cout << "[WebSocket] Answer message send to everyone (by " << getAddr(nc) << ")" << std::endl;
 }
 
