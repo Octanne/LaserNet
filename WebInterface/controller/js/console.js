@@ -154,15 +154,19 @@ function newCommand(command) {
                    +"    <a href='./#Documentation' style='color: -webkit-link;'>Obtenir plus d'informations</a>");
                 break;
             case "!auth":
-				if(args.length > 0){
-					var authMessage = {
-					type: "auth",
-					date: Date.now().toString(),
-					key: args[0]
-					};
-					wSocket.send(JSON.stringify(authMessage).toString());
+				if(isConnect){
+					if(args.length > 0){
+						var authMessage = {
+						type: "auth",
+						date: Date.now().toString(),
+						key: args[0]
+						};
+						wSocket.send(JSON.stringify(authMessage).toString());
+					}else{
+						addLog("error", "Veulliez préciser la secret key : !auth 'secretkey'");
+					}
 				}else{
-					addLog("error", "Veulliez préciser la secret key : !auth 'secretkey'");
+					addLog("error", "Veulliez lancer une connexion avant : !connect");
 				}
 				break;
 			case "!debug":
