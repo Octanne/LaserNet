@@ -150,6 +150,7 @@ void connectionClosed(struct mg_connection* nc)
 	std::cout << "connectionClosed: " << clientRemoved << " client removed" << std::endl;
 }
 
+
 void msgReceived(struct mg_connection* nc, void* p)
 {
 	const std::string addr = getAddr(nc);
@@ -218,6 +219,14 @@ void msgReceived(struct mg_connection* nc, void* p)
 	}
 	else if (type == "command") {
 		if (args == "help" || args == "?") {
+			sendMsg(nc, "answer",
+				"help or ?: display this help\n"
+				"status: display the current status of LaserNet\n"
+				"chat [msg]: send a message to everyone\n"
+				"debug (enabled/disabled): display/edit the current status of debuging c++ part\n"
+				"stop: stop the process");
+		}
+		else if (args == "status") {
 			sendLaserNetStatus(nc);
 		}
 		else if (args.rfind("chat ", 0) == 0) {//si il est en pos 0
@@ -265,6 +274,7 @@ void onMsgFromFriend(std::string msg)
 	else
 		std::cout << "[WebServer] message received from Friend unknow: \"" << msg << "\"" << std::endl;
 }
+
 
 void sendMsg(struct mg_connection* nc, std::string type, std::string arg, bool toEveryone)
 {
