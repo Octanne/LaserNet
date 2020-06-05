@@ -1,0 +1,13 @@
+footer {
+    width: 100%;
+    
+    margin-top: auto;
+    height: auto;
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    
+    background: #acb3b9;            
+    text-align: center;
+}

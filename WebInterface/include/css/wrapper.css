@@ -1,0 +1,100 @@
+@import "nav.css";
+
+#wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    max-height: calc(100% - 5px * 2 - 5em - 4px);/*header size*/
+    height: -moz-available;          /* WebKit-based browsers will ignore this. */
+    height: -webkit-fill-available;  /* Mozilla-based browsers will ignore this. */
+    height: fill-available;
+    width: auto;
+    padding: 2px;
+}
+#wrapper > * {
+    margin: 4px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100% - 4px * 2);
+    height: min-content;
+    overflow-y: auto;
+}
+
+
+
+#sidebar {
+    direction: rtl;/*scroll à gauche*/
+    padding-left: 2px;
+}
+#sidebar > * { direction: ltr;/*anti scroll à gauche*/ }
+
+
+
+#page {
+    min-width: 70%;
+    width: 100%;
+    width: -moz-available;          /* WebKit-based browsers will ignore this. */
+    width: -webkit-fill-available;  /* Mozilla-based browsers will ignore this. */
+    width: fill-available;
+    /*overflow-y: scroll;*/
+    padding-right: 8px;
+}
+.pageContent{
+    padding: 8px;
+    width: calc(100% - 8px * 2);
+    margin-bottom: 8px;
+    
+    background: #d4d7dc;
+    box-shadow: 2.5px 5px #acb3b9;
+    margin-right: 2.5px;
+}
+.pageContent[open="false"] { display:none !important; }
+
+h2{
+    color: rgb(95,158,160);
+    font-weight: bolder;
+    font-size: 1.8em;
+    
+    padding: 0px;
+    margin: 0px;
+}
+
+section {
+    padding: 8px;
+    /*box-sizing: border-box;*/
+    width: 95%;
+    margin: 0 auto;
+}
+h3 {
+    font-size: 1.4em;
+    margin: 4px 0;
+}
+section > p, section > div {
+    border: 1px grey solid;
+    box-shadow: 2.5px 3.5px grey;
+    
+    padding: 8px;
+    font-size: 1.3em;
+    display: flex;
+    flex-direction: column;
+}
+section .alinea {
+    text-indent: 1em;
+}
+section ul {
+  margin-top: 0;
+}
+section li { text-indent: 0; }
+section p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+section p:first-child { margin-top: 0; }
+section p:last-child { margin-bottom: 0; }
+
+
+/*https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_custom_scrollbar2*/
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { box-shadow: inset 0 0 10px #ccc;  border-radius: 8px; }
+::-webkit-scrollbar-thumb { background: #d4d7dc; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #ccc; }

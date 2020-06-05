@@ -1,0 +1,29 @@
+#sommaire ul {
+    list-style: none;
+    line-height: 26px;
+    margin-left: 2em;
+    margin-bottom: 0;
+    padding: 0;
+    text-align: left;
+}
+#sommaire h3 {
+    margin: 0;
+}
+
+.menu_link {
+    padding-left: 0;
+    margin-right: 16px;
+    cursor: pointer;
+    font-size: 1.4em;
+}
+.menu_link:hover {
+    color : rgb(95,158,160);
+    padding-left: 8px;
+    margin-right: 8px;
+}
+.menu_link[open="true"] {
+    font-weight: bold;
+    color: rgb(95,158,160);
+    padding-left: 16px;
+    margin-right: 0;
+}

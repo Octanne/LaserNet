@@ -1,0 +1,80 @@
+.widget {
+    padding: 20px;
+    background: #d4d7dc;
+    box-shadow: 2.5px 5px #acb3b9;
+    margin-right: 2.5px;
+    margin-bottom: 10px;
+    justify-content: space-around;
+}
+.widget h3 {
+    margin: 0;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.widget-core > * {
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+
+.widget h5 {
+    margin-top: 0;
+}
+
+.progress-group h5 {
+    font-size: 1em;
+    margin-bottom: 4px;
+}
+.progress-box {
+    /*width: 176px;pas utile et fait tt bugger (sauf si on veut centrer mais dans ce cas %*/
+    margin: 1px 0;
+    border: gray solid 1px;
+    
+    display:flex;
+}
+.progress-bar {
+    background-color: rgb(158, 169, 169);
+    text-align: center;
+    
+    width: 0;/*par défaut*/
+    /*ça va pas bugger si la valeur est proche de 0 ?*/
+    margin: 0;
+    margin-right: auto;
+    font-size: 0.8em;
+}
+
+[color="red"], output[type="boolean"]:not([value="true"]) {
+    color: red;
+}
+[color="darkorange"] {
+    color: darkorange;
+}
+[color="green"], output[type="boolean"][value="true"] {
+    color: green;
+}
+
+.celsius::after { content: "°C"; }
+.percent::after, .progress-bar::after { content: "%"; }
+
+
+
+.inline-widgetinfo {
+    display: flex;
+    flex-direction: row;
+}
+output[type="boolean"] {
+    display: flex;
+    width: 0;
+}
+.inline-widgetinfo * {
+    font-size: 0;
+}
+output[type="boolean"]::before {
+    font-size: initial;
+}
+output[type="boolean"]:not([value="true"])::before { content:"INACTIF"; }
+output[type="boolean"][value="true"]::before { content:"ACTIF"; }
+
+
+#credit { text-align: center; }

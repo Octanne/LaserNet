@@ -1,0 +1,47 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Gestion - LaserNet Project</title>
+
+    <link rel="stylesheet" href="include/css/body.css">
+    <link rel="stylesheet" href="include/css/darkmode.css">
+    <style type="text/css">
+        #pageController {
+            max-height: calc(100% - 32px);
+        }
+    </style>
+
+    <script type="text/javascript" src="include/js/darkmode.js"></script>
+    <script type="text/javascript" src="controller/js/console.js"></script>
+    <script type="text/javascript" src="include/js/jquery-1.12.0.min.js"></script>
+    <script type="text/javascript" src="include/js/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="include/js/jquery-ui-1.12.0.min.js"></script>
+</head>
+<body id="darkmodeSwitcher">
+    <header>
+        <h1>LaserNet Project (Jérôme & Corentin)</h1>
+        <label class="switch">
+            <input type="checkbox" id="darkmodeChecker">
+            <span class="slider" id="darkmodeClicker"></span>
+        </label>
+    </header>
+    <div id="wrapper"><!--body-->
+        <div id="sidebar">
+            <nav id="sommaire" class="widget">
+                <h3>Navigation</h3>
+                <p>Vous êtes actuellement sur la page dédiée à la connection avec les RaspberryPi</p>
+                <a href="./">Retour à la présentation</a>
+            </nav>
+            <div id="raspberrypi_status" class="widget"></div>
+            <div id="laser_status" class="widget"></div>
+            <div id="credit" class="widget"></div>
+        </div>
+        
+        <div class="pageContent" id="pageController">
+            <section id="console_box"></section>
+        </div>
+        
+    </div>
+</body>
+</html>
