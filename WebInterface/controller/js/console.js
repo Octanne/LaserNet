@@ -26,6 +26,7 @@ function onLoadPage() {
         `<h3>Raspberry Pi's Status</h3>
         <div class="widget-core">
             <h5 style="font-size:1.15em;">Temperature: <a id="temperature" class="celsius" color="green">0</a></h5>
+            <h5 class="inline-widgetinfo" style="font-size:1.1em;">Web connection:<output id="webStat" type="boolean" value="false"></output></h5>
             <div class="progress-group">
                 <h5>CPU Usage:</h5>
                 <div class="progress-box"><div id="cpuUsage" class="progress-bar" style="width:0%;">0</div></div>
@@ -39,14 +40,11 @@ function onLoadPage() {
     $("#laser_status").append(
         `<h3>Laser's Status</h3>
         <div class="widget-core">
-            <h5 class="inline-widgetinfo" style="font-size:1.1em; ">Synchronization: <output id="syncStat" type="boolean" value="false"></output></h5>
-            <h5 class="inline-widgetinfo" style="font-size:1.1em;">Web connection: <output id="webStat" type="boolean" value="false"></output></h5>
-            <div class="progress-group" id="netUsageTX">
-                <h5 class="nearby_h5">Network Usage:</h5>
-                <!--<div id="netUsageTX" class="progress-box" style="display:flex; padding-right: 4px;"><div id="netUsageRX" class="progress-bar" style="width:0%;">0</div></div>-->
-                
-                <div class="progress-box"><div id="netUsageRX" class="progress-bar" style="width:0%;">0</div></div>
-            </div>
+            <h5 class="inline-widgetinfo" style="font-size:1.1em; ">WiringPi:<output id="wiringPiStatus" type="boolean" value="false"></output></h5>
+            <h5 class="inline-widgetinfo" style="font-size:1.1em;">LibTins:<output id="tinsStatus" type="boolean" value="false"></output></h5>
+
+           <h5 class="inline-widgetinfo" style="font-size:1.1em;">Total Upload:<output id="totalUpload" type="number" value="0">0</output></h5>
+           <h5 class="inline-widgetinfo" style="font-size:1.1em;">Total Download:<output id="totalDownload" type="number" value="0">0</output></h5>
         </div>`);
     document.getElementById("credit").className = "widget";
     $("#credit").append(

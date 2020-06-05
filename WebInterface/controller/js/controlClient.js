@@ -50,26 +50,25 @@ function socketOnClose(ev) {
 function socketReceiveMessage(ev) {
 	var webMessage = JSON.parse(ev.data);
 	if (debugOn)addLog("debug", "[WebSocket] new data en approche : "+webMessage.type);
+	if(debugOn)addLog("debug","[WebSocket] data : " +ev.data);
 	
 	if(webMessage.type == "sysStatus"){
 		var temp = webMessage.temp;
 		var cpuUsage = parseFloat(webMessage.cpuUsage).toFixed(2);
 		var ramUsage = parseFloat(webMessage.ramUsage).toFixed(1);
-		var netUsage = parseFloat(webMessage.netUsage).toFixed(1);
+		var totalDown = webMessage.totalDown;
+		var totalUp = webMessage.totalUp;
 		
-		var webStatus = webMessage.webStatus;
-		var syncStatus = webMessage.syncStatus;
 		/*console.log("---------------------------------------------");
 		console.log("Temp : " + temp + "°C | Network : " + netUsage + "%");
 		console.log("CPU Usage : " + cpuUsage + "% | Ram Usage : " + ramUsage + "%");
-		console.log("Web : " + webStatus + " | Sync : " + syncStatus);
+		console.log("Web : " + webMessage.webStatus + ");
 		console.log("---------------------------------------------");*/
 		if (debugOn)addLog("info", "[WebSocket] new SysStatus reçu.");
 		
 		document.getElementById("temperature").innerHTML = temp;
 		setProgressBarValue(document.getElementById("cpuUsage"), cpuUsage);
 		setProgressBarValue(document.getElementById("ramUsage"), ramUsage);
-		setProgressBarValue(document.getElementById("netUsageRX"), netUsage);
 		
 		if(temp <= 45)
 			document.getElementById("temperature").setAttribute("color", "green");
@@ -78,11 +77,15 @@ function socketReceiveMessage(ev) {
 		else
 			document.getElementById("temperature").setAttribute("color", "red");
 
-		document.getElementById("syncStat").value = syncStatus;
-		document.getElementById("webStat").value = webStatus;
-	}
-	else if(webMessage.type == "consoleUP"){
-		addLog("info", "Console is up: \""+webMessage.msg+"\"");
+		document.getElementById("webStat").value = webMessage.webStatus;
+
+
+		document.getElementById("wiringPiStatus").value = webMessage.wiringPiStatus;
+		document.getElementById("tinsStatus").value = webMessage.tinsStatus;
+
+		console.log(webMessage.totalUpload);
+		document.getElementById("totalUpload").value = webMessage.totalUpload / 1000;
+		document.getElementById("totalDownload").value = webMessage.totalDownload / 1000;
 	}
 	else if(webMessage.type == "error"){
 		addLog("error", "[WebSocket] : " + webMessage.msg);
