@@ -34,10 +34,10 @@ function loadPage() {
     for (let i=0; i < pages_content.length; i++) {
         pages_content[i].setAttribute("open", pages_content[i].id == "page"+elementFocus ? "true" : "false");
     }
-    
-    if (elementFocus == "Controller" && document.getElementById("consoleLine")) {
+	
+    /*if (elementFocus == "Controller" && document.getElementById("consoleLine")) {
         document.getElementById("consoleLine").focus();
-    }
+    }*/
 }
 function openPage(element) {
     window.open("./#"+element.id.substring((element.id.indexOf('u')+1)),"_self");

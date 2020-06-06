@@ -17,35 +17,7 @@ function loadScript(source) {
 
 function onLoadPage() {
     loadScript("controller/js/controlClient.js");
-    
-    //création de la console des widgets...
     loadStyle("controller/css/widgets.css");
-    
-    document.getElementById("raspberrypi_status").className = "widget";
-    $("#raspberrypi_status").append(
-        `<h3>Raspberry Pi's Status</h3>
-        <div class="widget-core">
-            <h5 style="font-size:1.15em;">Temperature: <a id="temperature" class="celsius" color="green">0</a></h5>
-            <h5 class="inline-widgetinfo" style="font-size:1.1em;">Web connection:<output id="webStat" type="boolean" value="false"></output></h5>
-            <div class="progress-group">
-                <h5>CPU Usage:</h5>
-                <div class="progress-box"><div id="cpuUsage" class="progress-bar" style="width:0%;">0</div></div>
-            </div>
-            <div class="progress-group">
-                <h5>RAM Usage:</h5>
-                <div class="progress-box"><div id="ramUsage" class="progress-bar" style="width:0%;">0</div></div>
-            </div>
-        </div>`);
-    document.getElementById("laser_status").className = "widget";
-    $("#laser_status").append(
-        `<h3>Laser's Status</h3>
-        <div class="widget-core">
-            <h5 class="inline-widgetinfo" style="font-size:1.1em; ">WiringPi:<output id="wiringPiStatus" type="boolean" value="false"></output></h5>
-            <h5 class="inline-widgetinfo" style="font-size:1.1em;">LibTins:<output id="tinsStatus" type="boolean" value="false"></output></h5>
-
-           <h5 class="inline-widgetinfo" style="font-size:1.1em;">Total Upload:<output id="totalUpload" type="number" value="0">0</output></h5>
-           <h5 class="inline-widgetinfo" style="font-size:1.1em;">Total Download:<output id="totalDownload" type="number" value="0">0</output></h5>
-        </div>`);
     document.getElementById("credit").className = "widget";
     $("#credit").append(
         `<h3>Developer's Data</h3>
@@ -54,47 +26,7 @@ function onLoadPage() {
             Jérôme Lécuyer & Corentin Levalet<br/>
             ISN Project - 2019-2020
         </p>`);
-    //création de la console
-    loadStyle("controller/css/console.css");
-    $("#console_box").append(
-        `<h3>Controller</h3>
-        <div id="console"></div>
-        <input type="text" id="consoleLine" name="consoleLine">`);
-
-
-    addLog("command", "Initialisation de la console...");
-    
-
-    $("#consoleLine").on('keyup', function (e) {
-        if (e.keyCode === 13) {//enter
-            var command = this.value;
-            if (command == "")
-                return;
-            this.value = "";//clear
-
-            addLog("command", command);
-            newCommand(command);
-        }
-    });
-    $("#consoleLine").on('keydown', function (e) {
-        if (e.keyCode == 9) {//tab
-            return false;//auto compltation ?
-        }
-    });
-    $("#console").on("scroll", function (e) {
-        var maxScroll = $("#console")[0].scrollHeight - $("#console").outerHeight();
-        consoleScrollEnd = (($("#console").scrollTop()+128) > maxScroll);//on perd ou on gagne le scroll
-    });
-    $("#darkmodeClicker").on("click", function (e) {
-        setDarkMode(!$("#darkmodeChecker")[0].checked);
-    });
-
-    try {
-        initControlClient();
-    } catch(e) {
-        alert(e);
-    }
-    
+    //création de la console des widgets...
 }
 
 

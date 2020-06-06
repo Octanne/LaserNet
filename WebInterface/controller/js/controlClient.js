@@ -50,25 +50,26 @@ function socketOnClose(ev) {
 function socketReceiveMessage(ev) {
 	var webMessage = JSON.parse(ev.data);
 	if (debugOn)addLog("debug", "[WebSocket] new data en approche : "+webMessage.type);
-	if(debugOn)addLog("debug","[WebSocket] data : " +ev.data);
 	
 	if(webMessage.type == "sysStatus"){
 		var temp = webMessage.temp;
 		var cpuUsage = parseFloat(webMessage.cpuUsage).toFixed(2);
 		var ramUsage = parseFloat(webMessage.ramUsage).toFixed(1);
-		var totalDown = webMessage.totalDown;
-		var totalUp = webMessage.totalUp;
+		var netUsage = parseFloat(webMessage.netUsage).toFixed(1);
 		
+		var webStatus = webMessage.webStatus;
+		var syncStatus = webMessage.syncStatus;
 		/*console.log("---------------------------------------------");
 		console.log("Temp : " + temp + "°C | Network : " + netUsage + "%");
 		console.log("CPU Usage : " + cpuUsage + "% | Ram Usage : " + ramUsage + "%");
-		console.log("Web : " + webMessage.webStatus + ");
+		console.log("Web : " + webStatus + " | Sync : " + syncStatus);
 		console.log("---------------------------------------------");*/
 		if (debugOn)addLog("info", "[WebSocket] new SysStatus reçu.");
 		
 		document.getElementById("temperature").innerHTML = temp;
 		setProgressBarValue(document.getElementById("cpuUsage"), cpuUsage);
 		setProgressBarValue(document.getElementById("ramUsage"), ramUsage);
+		setProgressBarValue(document.getElementById("netUsageRX"), netUsage);
 		
 		if(temp <= 45)
 			document.getElementById("temperature").setAttribute("color", "green");
@@ -77,33 +78,11 @@ function socketReceiveMessage(ev) {
 		else
 			document.getElementById("temperature").setAttribute("color", "red");
 
-		document.getElementById("webStat").value = webMessage.webStatus;
-
-		document.getElementById("wiringPiStatus").setAttribute("value", webMessage.wiringPiStatus);
-		document.getElementById("tinsStatus").setAttribute("value", webMessage.tinsStatus);
-
-		var upload = webMessage.totalUpload;
-		if(upload < 1000000){
-			document.getElementById("totalUpload").setAttribute("unit", "k");
-			document.getElementById("totalUpload").value = parseFloat(upload / 1000).toFixed(3);
-		}else if(upload >= 1000000 && upload < 1000000000){
-			document.getElementById("totalUpload").setAttribute("unit", "m");
-			document.getElementById("totalUpload").value = parseFloat(upload / 1000000).toFixed(3);
-		}else{
-			document.getElementById("totalUpload").setAttribute("unit", "g");
-			document.getElementById("totalUpload").value = parseFloat(upload / 1000000000).toFixed(3);
-		}
-		var download = webMessage.totalDownload;
-		if(download < 1000000){
-			document.getElementById("totalDownload").setAttribute("unit", "k");
-			document.getElementById("totalDownload").value = parseFloat(download / 1000).toFixed(3);
-		}else if(download >= 1000000 && download < 1000000000){
-			document.getElementById("totalDownload").setAttribute("unit", "m");
-			document.getElementById("totalDownload").value = parseFloat(download / 1000000).toFixed(3);
-		}else{
-			document.getElementById("totalDownload").setAttribute("unit", "g");
-			document.getElementById("totalDownload").value = parseFloat(download / 1000000000).toFixed(3);
-		}
+		document.getElementById("syncStat").value = syncStatus;
+		document.getElementById("webStat").value = webStatus;
+	}
+	else if(webMessage.type == "consoleUP"){
+		addLog("info", "Console is up: \""+webMessage.msg+"\"");
 	}
 	else if(webMessage.type == "error"){
 		addLog("error", "[WebSocket] : " + webMessage.msg);
