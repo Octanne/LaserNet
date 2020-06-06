@@ -58,12 +58,9 @@
 .percent::after, .progress-bar::after { content: "%"; }
 
 .inline-widgetinfo {
-    display: flex;
-    flex-direction: row;
     width: fit-content;
     margin-left: auto;
     margin-right: auto;
-
 }
 output[type="number"] { margin-left: 3px; color: #00bcd4; }
 output[type="number"][unit="g"]::after { margin-left: 2px; content: "Gbits"; }

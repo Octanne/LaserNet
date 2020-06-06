@@ -106,7 +106,7 @@ function socketReceiveMessage(ev) {
 		}
 
 		var time = new Date(webMessage.workingTime / 1000 - 3600000);
-		document.getElementById("workingTime").innerHTML = time.toLocaleTimeString();
+		document.getElementById("workingTime").innerHTML = time.toLocaleTimeString("fr-fr");
 	}
 	else if(webMessage.type == "error"){
 		addLog("error", "[WebSocket] : " + webMessage.msg);
