@@ -22,18 +22,18 @@ private:
 	// Mongoose event manager
 	struct mg_mgr mgr;
 	// Mongoose connection
-	struct mg_connection *ncServ;
+	struct mg_connection *ncServ = nullptr;
 	// Bind Options
 	struct mg_bind_opts bind_opts;
 	// Err
-	const char *err;
+	const char *err = nullptr;
 	// Port 
 	std::string port;
 public:
 	WebServer();
 	~WebServer();
 
-	bool launch();
+	void launch();
 	void stop();
 };
 // Struct containing setings for how to server HTTP with mongoose
@@ -63,6 +63,5 @@ static double temperature();
 static int net_usage();
 static std::vector<struct mg_connection*> ncs;
 static bool isUp = true;
-static bool restartAfterStop = false;
 #endif
 

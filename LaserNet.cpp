@@ -1,10 +1,12 @@
 #include "LaserNet.h"
 
-int stat_totalSizePkt = 0;
+int stat_totalSizePktUpload = 0;//envoyé par Laser
+int stat_totalSizePktDownload = 0;//reçu par Capteur
 bool WiringPiOk = false;
 bool TinsOk = false;
 int pinC = 0;
 int pinL = 0;
+int64_t workingStart = 0;
 Tins::NetworkInterface iface = Tins::NetworkInterface::default_interface();
 
 std::string printAllInterfaces(Tins::NetworkInterface ifaceDefault) {
@@ -177,7 +179,7 @@ bool LASERNET_LASER::send(const Tins::Packet& pkt)
 	las->sendPkt(pout, &askToStop);
 	//TODO: if debug
 	//std::cout << "[LaserNet_J/laser/send] packet " << counterPacket << " renvoye " << pout << std::endl;
-	stat_totalSizePkt += pout.size();
+	stat_totalSizePktUpload += pout.size();
 	return !askToStop;
 }
 
@@ -191,7 +193,7 @@ void LASERNET_LASER::process()
 
 	las->sleepUs(2000000);//2sec le temps que l'autre ai eu le temps de démarrer
 	counterPacket = 0;
-	stat_totalSizePkt = 0;
+	stat_totalSizePktUpload = 0;
 	while (!askToStop) {//tant qu'il demande pas de stop
 		try {
 			const Tins::Packet pkt = sniffer->next_packet();
@@ -256,6 +258,7 @@ void LASERNET_CAPTEUR::process()
 		return;
 	}
 	counterPacket = 0;
+	stat_totalSizePktDownload = 0;
 	while (!askToStop) {
 		try {
 			bool ok = true;
@@ -264,6 +267,7 @@ void LASERNET_CAPTEUR::process()
 				continue;
 			//TODO: if debug
 			//std::cout << "[LaserNet_J/capteur/process] packet recu " << counterPacket << " (size:" << pkt.size() << "): " << pkt << std::endl;
+			stat_totalSizePktDownload += pkt.size();
 			uint8_t type = 0;
 			pkt >> type;//change la taille, ne pas oublier de dire que 8 bits sont en moins !
 			if (type == 0) {
@@ -377,6 +381,8 @@ void LaserNet_Transfert::exec()
 
 	threadLas->start();
 	threadCap->start();
+
+	workingStart = SENSOR::getCurrentus();
 }
 bool LaserNet_Transfert::checkTransfert()
 {
@@ -505,11 +511,13 @@ std::string LASERNET::getStateInfo(bool complet) const
 		return printAllInterfaces() + "Quelle interface ? ('non' pour celle par defaut)";
 	case states::READY:
 		if (complet) {
-			return std::string("The transmisison is OK (") + (WiringPiOk?"true":"false") + "," + (TinsOk?"true":"false") + ")\n" +
+			return std::string("The transmisison is OK (") + (WiringPiOk ? "true" : "false") + "," + (TinsOk ? "true" : "false") + ")\n" +
 				"	Pin Capteur: " + std::to_string(pinC) + "\n" +
 				"	Pin Laser: " + std::to_string(pinL) + "\n" +
 				"	Interface: " + toString(iface.friendly_name()) + "\n" +
-				"	Stats pkt size count:" + std::to_string(stat_totalSizePkt);
+				"	Upload count:" + std::to_string(stat_totalSizePktUpload) + "\n" +
+				"	Download count:" + std::to_string(stat_totalSizePktDownload) + "\n" +
+				"	WorkingTime:" + std::to_string(workingTime());
 		}
 		else
 			return "The transmission is OK, help to have more informations";
@@ -521,5 +529,17 @@ void LASERNET::sendMsgToFriend(std::string msg)
 {
 	if(LNT)
 		LNT->sendMsgToFriend(msg);
+}
+
+int LASERNET::totalUpload() const { return stat_totalSizePktUpload; }
+int LASERNET::totalDownload() const { return stat_totalSizePktDownload; }
+bool LASERNET::isWiringPiOk() const { return WiringPiOk; }
+bool LASERNET::isTinsOk() const { return TinsOk; }
+
+int64_t LASERNET::workingTime() const
+{
+	if (!LNT)
+		return 0;
+	return SENSOR::getCurrentus() - workingStart;
 }
 

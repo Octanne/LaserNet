@@ -107,6 +107,7 @@ private:
 
 };
 
+
 class LASERNET {
 public:
 	LASERNET(void (*onMsgFromFriend)(std::string));
@@ -115,6 +116,11 @@ public:
 	std::string setStateCmd(std::string command);
 	std::string getStateInfo(bool complet = true) const;
 	void sendMsgToFriend(std::string msg);
+	int totalUpload() const;
+	int totalDownload() const;
+	bool isWiringPiOk() const;
+	bool isTinsOk() const;
+	int64_t workingTime() const;
 	
 private:
 	enum states {

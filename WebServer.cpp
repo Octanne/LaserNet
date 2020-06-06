@@ -17,14 +17,20 @@ WebServer::WebServer()
 
 	// Set port
 	port = "8000";
-
-	LN = new LASERNET(onMsgFromFriend);
 }
-WebServer::~WebServer() {}
+WebServer::~WebServer() {
+	if (LN)
+		delete LN;
+	LN = nullptr;
 
-bool WebServer::launch() {
+	//Free up all memory allocated
+	mg_mgr_free(&mgr);
+}
+
+void WebServer::launch() {
 	
-	restartAfterStop = false;
+	if(!LN)
+		LN = new LASERNET(onMsgFromFriend);
 
 	std::cout << "Starting WebServer on port " << port << std::endl;
 	
@@ -34,7 +40,6 @@ bool WebServer::launch() {
 	// If connection fails
 	if (ncServ == NULL) {
 		std::cout << "Failed to create listener : " << err << std::endl;
-		return true;
 	}
 
 	// Set up HTTP server options
@@ -43,15 +48,11 @@ bool WebServer::launch() {
 	s_http_server_opts.document_root = "/home/pi/Desktop/WebInterface";
 	s_http_server_opts.enable_directory_listing = "no";
 
+
 	std::cout << LN->setStateCmd("WebServer") << std::endl;
 
 	while(isUp)
 		mg_mgr_poll(&mgr, 1000);
-
-	//Free up all memory allocated
-	mg_mgr_free(&mgr);
-
-	return !restartAfterStop;//si on restart alors on stop pas
 }
 
 void WebServer::stop() { isUp = false; LN->stop(); }
@@ -229,7 +230,7 @@ void msgReceived(struct mg_connection* nc, void* p)
 				"chat [msg]: send a message to everyone\n"
 				"debug (enabled/disabled): display/edit the current status of debuging c++ part\n"
 				"stop: stop the process\n"
-				"restart: restart the process");
+				"restart: restart LaserNet");
 		}
 		else if (args == "status") {
 			sendLaserNetStatus(nc);
@@ -253,9 +254,14 @@ void msgReceived(struct mg_connection* nc, void* p)
 			isUp = false;
 		}
 		else if (args == "restart") {
-			std::cout << "[WebSocket] Restarted by " << addr << std::endl;
-			isUp = false;
-			restartAfterStop = true;
+			std::cout << "[WebSocket] LaserNet restarted by " << addr << std::endl;
+			if (LN)
+				delete LN;
+			LN = new LASERNET(onMsgFromFriend);
+			std::cout << LN->setStateCmd("WebServer") << std::endl;
+
+			sendMsg(nc, "answer", "LaserNet had been restarted");
+			sendLaserNetStatus(nc);
 		}
 		else {
 			std::string retour = LN->setStateCmd(args);
@@ -318,29 +324,28 @@ void sendStatus(mg_connection* nc)
 {
 	// Document
 	rapidjson::Document jsonDocSend;
-	const char* jsonTxt = "{\"type\":\"sysStatus\",\"temp\":\"\",\"cpuUsage\":\"\",\"ramUsage\":\"\",\"netUsage\":\"\",\"webStatus\":\"\",\"syncStatus\":\"\"}";
+	const char* jsonTxt = "{\"type\":\"sysStatus\",\"temp\":\"\",\"cpuUsage\":\"\",\"ramUsage\":\"\",\"webStatus\":\"\","
+		"\"wiringPiStatus\":\"\",\"tinsStatus\":\"\",\"totalUpload\":\"\",\"totalDownload\":\"\",\"workingTime\":\"\"}";
 	jsonDocSend.Parse(jsonTxt);
 
 	// Type
-	rapidjson::Value& typeV = jsonDocSend["type"];
-	typeV.SetString("sysStatus");
+	jsonDocSend["type"].SetString("sysStatus");
 	// Temperature
-	rapidjson::Value& tempV = jsonDocSend["temp"];
-	tempV.SetDouble(temperature());
-	// CPU Usage // A revoir
-	rapidjson::Value& cpuPrctV = jsonDocSend["cpuUsage"];
-	cpuPrctV.SetDouble(cpu_usage());
+	jsonDocSend["temp"].SetDouble(temperature());
+	// CPU Usage
+	jsonDocSend["cpuUsage"].SetDouble(cpu_usage());
 	// RAM Usage
-	rapidjson::Value& ramPrctV = jsonDocSend["ramUsage"];
-	ramPrctV.SetDouble(mem_usage());
-	// NET Usage
-	rapidjson::Value& netPrctV = jsonDocSend["netUsage"];
-	netPrctV.SetDouble(net_usage());
-	// Status Lasernet @Todo
-	rapidjson::Value& webStatV = jsonDocSend["webStatus"];
-	webStatV.SetBool(false);
-	rapidjson::Value& syncStatV = jsonDocSend["syncStatus"];
-	syncStatV.SetBool(false);
+	jsonDocSend["ramUsage"].SetDouble(mem_usage());
+	// Connected to the Web TODO
+	jsonDocSend["webStatus"].SetBool(false);
+
+	// Status Lasernet
+	jsonDocSend["wiringPiStatus"].SetBool(LN->isWiringPiOk());
+	jsonDocSend["tinsStatus"].SetBool(LN->isTinsOk());
+	jsonDocSend["totalUpload"].SetInt(LN->totalUpload());
+	jsonDocSend["totalDownload"].SetInt(LN->totalDownload());
+	jsonDocSend["workingTime"].SetInt(LN->workingTime());
+
 
 	// Stringify the DOM
 	rapidjson::StringBuffer buffer;
