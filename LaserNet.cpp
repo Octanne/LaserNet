@@ -438,9 +438,22 @@ LASERNET::~LASERNET()
 	}
 }
 
+void LASERNET::reset()
+{
+	stat_totalSizePktUpload = 0;//envoyé par Laser
+	stat_totalSizePktDownload = 0;//reçu par Capteur
+	WiringPiOk = false;
+	TinsOk = false;
+	stop();
+	state = 0;
+}
+
 void LASERNET::stop() {
-	if(LNT != nullptr)
+	if (LNT) {
 		LNT->stop();
+		delete LNT;
+		LNT = nullptr;
+	}
 }
 
 

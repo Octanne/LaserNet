@@ -255,9 +255,7 @@ void msgReceived(struct mg_connection* nc, void* p)
 		}
 		else if (args == "restart") {
 			std::cout << "[WebSocket] LaserNet restarted by " << addr << std::endl;
-			if (LN)
-				delete LN;
-			LN = new LASERNET(onMsgFromFriend);
+			LN->reset();
 			std::cout << LN->setStateCmd("WebServer") << std::endl;
 
 			sendMsg(nc, "answer", "LaserNet had been restarted");
