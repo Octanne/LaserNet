@@ -66,6 +66,9 @@
 
 }
 output[type="number"] { margin-left: 3px; color: #00bcd4;}
+output[type="number"][unit="g"]::after { margin-left: 2px; content: "Gbits";}
+output[type="number"][unit="m"]::after { margin-left: 2px; content: "Mbits";}
+output[type="number"][unit="k"]::after { margin-left: 2px; content: "Kbits";}
 output[type="number"]::after { margin-left: 2px; content: "Kbits";}
 output[type="boolean"] { font-size: 0; margin-left: 3px;}
 output[type="boolean"]::before { font-size: initial; }

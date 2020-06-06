@@ -79,13 +79,31 @@ function socketReceiveMessage(ev) {
 
 		document.getElementById("webStat").value = webMessage.webStatus;
 
+		document.getElementById("wiringPiStatus").setAttribute("value", webMessage.wiringPiStatus);
+		document.getElementById("tinsStatus").setAttribute("value", webMessage.tinsStatus);
 
-		document.getElementById("wiringPiStatus").value = webMessage.wiringPiStatus;
-		document.getElementById("tinsStatus").value = webMessage.tinsStatus;
-
-		console.log(webMessage.totalUpload);
-		document.getElementById("totalUpload").value = webMessage.totalUpload / 1000;
-		document.getElementById("totalDownload").value = webMessage.totalDownload / 1000;
+		var upload = webMessage.totalUpload;
+		if(upload < 1000000){
+			document.getElementById("totalUpload").setAttribute("unit", "k");
+			document.getElementById("totalUpload").value = parseFloat(upload / 1000).toFixed(3);
+		}else if(upload >= 1000000 && upload < 1000000000){
+			document.getElementById("totalUpload").setAttribute("unit", "m");
+			document.getElementById("totalUpload").value = parseFloat(upload / 1000000).toFixed(3);
+		}else{
+			document.getElementById("totalUpload").setAttribute("unit", "g");
+			document.getElementById("totalUpload").value = parseFloat(upload / 1000000000).toFixed(3);
+		}
+		var download = webMessage.totalDownload;
+		if(download < 1000000){
+			document.getElementById("totalDownload").setAttribute("unit", "k");
+			document.getElementById("totalDownload").value = parseFloat(download / 1000).toFixed(3);
+		}else if(download >= 1000000 && download < 1000000000){
+			document.getElementById("totalDownload").setAttribute("unit", "m");
+			document.getElementById("totalDownload").value = parseFloat(download / 1000000).toFixed(3);
+		}else{
+			document.getElementById("totalDownload").setAttribute("unit", "g");
+			document.getElementById("totalDownload").value = parseFloat(download / 1000000000).toFixed(3);
+		}
 	}
 	else if(webMessage.type == "error"){
 		addLog("error", "[WebSocket] : " + webMessage.msg);
