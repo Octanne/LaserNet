@@ -232,7 +232,7 @@ LASERNET_CAPTEUR::LASERNET_CAPTEUR(int pinP, Tins::NetworkInterface iface, void 
 LASERNET_CAPTEUR::~LASERNET_CAPTEUR()
 {
 	std::cout << "[LaserNet_J/capteur] Closing of a thread..." << std::endl;
-	askToStop = false;
+	askToStop = true;
 	thread->join();
 	if (thread)
 		delete thread;
