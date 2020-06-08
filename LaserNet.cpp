@@ -122,9 +122,8 @@ LASERNET_LASER::~LASERNET_LASER()
 }
 void LASERNET_LASER::start()
 {
-	isRunning = true;
 	askToStop = false;
-	if (thread != nullptr)
+	if (thread != nullptr && isRunning)
 		delete thread;
 	thread = new std::thread(processLaser, this);
 }
@@ -245,7 +244,7 @@ LASERNET_CAPTEUR::~LASERNET_CAPTEUR()
 void LASERNET_CAPTEUR::start()
 {
 	askToStop = false;
-	if (thread != nullptr)
+	if (thread != nullptr && isRunning)
 		delete thread;
 	thread = new std::thread(processCapteur, this);
 }
@@ -421,14 +420,37 @@ void LaserNet_Transfert::stop()
 	std::cout << "[LaserNet_Transfert] stopped" << std::endl;
 }
 
-void LaserNet_Transfert::sendMsgToFriend(std::string msg)
-{ threadLas->send(msg); }
+void LaserNet_Transfert::sendMsgToFriend(std::string msg) { threadLas->send(msg); }
 
-
-
-LASERNET::LASERNET(void (*onMsgFromFriend)(std::string)) {
-	this->onMsgFromFriend = onMsgFromFriend;
+bool LaserNet_Transfert::enableUpload(bool enable)
+{
+	if (!threadLas)
+		return false;
+	if (enable == threadLas->getIsRunning())
+		return true;
+	if (enable)
+		threadLas->start();
+	else
+		threadLas->close();
+	return true;
 }
+
+bool LaserNet_Transfert::enableDownload(bool enable)
+{
+	if (!threadCap)
+		return false;
+	if (enable == threadCap->getIsRunning())
+		return true;
+	if (enable)
+		threadCap->start();
+	else
+		threadCap->close();
+	return true;
+}
+
+
+
+LASERNET::LASERNET(void (*onMsgFromFriend)(std::string)) { this->onMsgFromFriend = onMsgFromFriend; }
 
 LASERNET::~LASERNET()
 {
@@ -505,6 +527,46 @@ std::string LASERNET::setStateCmd(std::string command)
 		break;
 		}
 	case states::READY:
+		if (command.rfind("laser", 0) == 0 || command.rfind("upload", 0) == 0) {
+			if (command.rfind("laser", 0) == 0)
+				command = command.replace(0, 5, "");
+			else if (command.rfind("upload", 0) == 0)
+				command = command.replace(0, 6, "");
+			
+
+			if (command.rfind(" ", 0) == 0 && command.size() > 1) {//espace et pas que après
+				command = command.replace(0, 1, "");
+				if (command == "enable" || command == "enabled" || command == "on" || command == "true") {
+					LNT->enableUpload(true);
+					return "Upload: starting...";//isUploadEnabled ne se rafraichi pas tout de suite
+				}
+				else {
+					LNT->enableUpload(false);
+					return "Upload: stoping...";//isUploadEnabled ne se rafraichi pas tout de suite
+				}
+			}
+			return std::string("Upload: ") + (LNT->isUploadEnabled() ? "enabled" : "disabled");
+		}
+		else if (command.rfind("capteur", 0) == 0 || command.rfind("download", 0) == 0) {
+			if (command.rfind("capteur", 0) == 0)
+				command = command.replace(0, 7, "");
+			else if (command.rfind("download", 0) == 0)
+				command = command.replace(0, 8, "");
+
+
+			if (command.rfind(" ", 0) == 0 && command.size() > 1) {//espace et pas que après
+				command = command.replace(0, 1, "");
+				if (command == "enable" || command == "enabled" || command == "on" || command == "true") {
+					LNT->enableDownload(true);
+					return "Download: starting...";//isDownloadEnabled ne se rafraichi pas tout de suite
+				}
+				else {
+					LNT->enableDownload(false);
+					return "Download: stopping...";//isDownloadEnabled ne se rafraichi pas tout de suite
+				}
+			}
+			return std::string("Download: ") + (LNT->isDownloadEnabled() ? "enabled" : "disabled");
+		}
 		break;//we can't do nothing
 	}
 	return getStateInfo(false);//question suivante
@@ -528,8 +590,8 @@ std::string LASERNET::getStateInfo(bool complet) const
 				"	Pin Capteur: " + std::to_string(pinC) + "\n" +
 				"	Pin Laser: " + std::to_string(pinL) + "\n" +
 				"	Interface: " + toString(iface.friendly_name()) + "\n" +
-				"	Upload count:" + std::to_string(stat_totalSizePktUpload) + "\n" +
-				"	Download count:" + std::to_string(stat_totalSizePktDownload) + "\n" +
+				"	Upload count:" + std::to_string(stat_totalSizePktUpload) + " (" + (LNT->isUploadEnabled() ? "enabled" : "disabled") + ")\n" +
+				"	Download count:" + std::to_string(stat_totalSizePktDownload) + " (" + (LNT->isDownloadEnabled() ? "enabled" : "disabled") + ")\n" +
 				"	WorkingTime:" + std::to_string(workingTime());
 		}
 		else

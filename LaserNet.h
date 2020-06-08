@@ -91,6 +91,10 @@ public:
 	bool checkTransfert();
 	void stop();
 	void sendMsgToFriend(std::string msg);
+	bool enableUpload(bool enable);
+	bool enableDownload(bool enable);
+	bool isUploadEnabled() const { if (threadLas) return threadLas->getIsRunning(); return false; }
+	bool isDownloadEnabled() const { if (threadCap) return threadCap->getIsRunning(); return false; }
 
 private:
 	bool isRunning = true;
@@ -112,6 +116,7 @@ class LASERNET {
 public:
 	LASERNET(void (*onMsgFromFriend)(std::string));
 	~LASERNET();
+	void reset();
 	void stop();
 	std::string setStateCmd(std::string command);
 	std::string getStateInfo(bool complet = true) const;
@@ -121,6 +126,8 @@ public:
 	bool isWiringPiOk() const;
 	bool isTinsOk() const;
 	int64_t workingTime() const;
+	bool isUploadEnabled() const { if (LNT) return LNT->isUploadEnabled(); return false; }
+	bool isDownloadEnabled() const { if (LNT) return LNT->isDownloadEnabled(); return false; }
 	
 private:
 	enum states {

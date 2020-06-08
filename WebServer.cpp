@@ -19,13 +19,13 @@ WebServer::WebServer()
 	port = "8000";
 }
 WebServer::~WebServer() {
-	if (LN)
+	if (LN) {
+		LN->stop();
 		delete LN;
+	}
 	LN = nullptr;
-
-	//Free up all memory allocated
-	mg_mgr_free(&mgr);
 }
+
 
 void WebServer::launch() {
 	
@@ -40,6 +40,8 @@ void WebServer::launch() {
 	// If connection fails
 	if (ncServ == NULL) {
 		std::cout << "Failed to create listener : " << err << std::endl;
+		mg_mgr_free(&mgr);//Free up all memory allocated
+		return;
 	}
 
 	// Set up HTTP server options
@@ -53,9 +55,12 @@ void WebServer::launch() {
 
 	while(isUp)
 		mg_mgr_poll(&mgr, 1000);
+
+	//Free up all memory allocated
+	mg_mgr_free(&mgr);
 }
 
-void WebServer::stop() { isUp = false; LN->stop(); }
+void WebServer::stop() { isUp = false; }
 
 std::string intoString(const char* a, int size)
 {
@@ -228,8 +233,10 @@ void msgReceived(struct mg_connection* nc, void* p)
 				"help or ?: display this help\n"
 				"status: display the current status of LaserNet\n"
 				"chat [msg]: send a message to everyone\n"
-				"debug (enabled/disabled): display/edit the current status of debuging c++ part\n"
-				"stop: stop the process\n"
+				"debug (enable/disable): display/edit the current status of debuging c++ part\n"
+				"upload (enable/disable): display/edit the current status of LaserNet's Upload\n"
+				"download (enable/disable): display/edit the current status of LaserNet's Download\n"
+				"stop: stop LaserNet and WebServer\n"
 				"restart: restart LaserNet");
 		}
 		else if (args == "status") {
@@ -247,10 +254,11 @@ void msgReceived(struct mg_connection* nc, void* p)
 					args.replace(0, 1, "");
 				debug = (args == "enabled" || args == "enable" || args == "true" || args == "on");
 			}
-			sendMsg(nc, "answer", std::string("Current state for debug: ") + (debug ? "enbaled" : "disabled"));
+			sendMsg(nc, "answer", std::string("Current state for debug: ") + (debug ? "enabled" : "disabled"));
 		}
 		else if (args == "stop") {
 			std::cout << "[WebSocket] Stopped by " << addr << std::endl;
+			sendMsg(nc, "answer", "WebServer is stopping...", true);//si on reçoit ce message 'est qu'il s'est pas arreté
 			isUp = false;
 		}
 		else if (args == "restart") {
@@ -258,7 +266,7 @@ void msgReceived(struct mg_connection* nc, void* p)
 			LN->reset();
 			std::cout << LN->setStateCmd("WebServer") << std::endl;
 
-			sendMsg(nc, "answer", "LaserNet had been restarted");
+			sendMsg(nc, "answer", "LaserNet had been restarted", true);
 			sendLaserNetStatus(nc);
 		}
 		else {
@@ -286,7 +294,7 @@ void onMsgFromFriend(std::string msg)
 		sendMsg(nullptr, "chat", msg, true);
 	}
 	else
-		std::cout << "[WebServer] message received from Friend unknow: \"" << msg << "\"" << std::endl;
+		std::cout << "[WebSocket] message received from Friend unknow: \"" << msg << "\"" << std::endl;
 }
 
 
@@ -322,28 +330,29 @@ void sendStatus(mg_connection* nc)
 {
 	// Document
 	rapidjson::Document jsonDocSend;
-	const char* jsonTxt = "{\"type\":\"sysStatus\",\"temp\":\"\",\"cpuUsage\":\"\",\"ramUsage\":\"\",\"webStatus\":\"\","
-		"\"wiringPiStatus\":\"\",\"tinsStatus\":\"\",\"totalUpload\":\"\",\"totalDownload\":\"\",\"workingTime\":\"\"}";
+	const char* jsonTxt = "{\"type\":\"sysStatus\","
+		"\"temp\":\"\",\"cpuUsage\":\"\",\"ramUsage\":\"\",\"webStatus\":\"\","
+		"\"wiringPiStatus\":\"\",\"tinsStatus\":\"\",\"workingTime\":\"\","
+		"\"uploadStatus\":\"\",\"downloadStatus\":\"\",\"totalUpload\":\"\",\"totalDownload\":\"\"}";
 	jsonDocSend.Parse(jsonTxt);
 
-	// Type
-	jsonDocSend["type"].SetString("sysStatus");
-	// Temperature
-	jsonDocSend["temp"].SetDouble(temperature());
-	// CPU Usage
-	jsonDocSend["cpuUsage"].SetDouble(cpu_usage());
-	// RAM Usage
-	jsonDocSend["ramUsage"].SetDouble(mem_usage());
-	// Connected to the Web TODO
-	jsonDocSend["webStatus"].SetBool(false);
+	
+	jsonDocSend["type"].SetString("sysStatus");// Type
 
-	// Status Lasernet
+	jsonDocSend["temp"].SetDouble(temperature());// Temperature
+	jsonDocSend["cpuUsage"].SetDouble(cpu_usage());// CPU Usage
+	jsonDocSend["ramUsage"].SetDouble(mem_usage());// RAM Usage
+	jsonDocSend["webStatus"].SetBool(false);// Connected to the Web TODO
+
+	// LaserNet Status
 	jsonDocSend["wiringPiStatus"].SetBool(LN->isWiringPiOk());
 	jsonDocSend["tinsStatus"].SetBool(LN->isTinsOk());
-	jsonDocSend["totalUpload"].SetInt(LN->totalUpload());
-	jsonDocSend["totalDownload"].SetInt(LN->totalDownload());
 	jsonDocSend["workingTime"].SetInt(LN->workingTime());
 
+	jsonDocSend["uploadStatus"].SetBool(LN->isUploadEnabled());
+	jsonDocSend["downloadStatus"].SetBool(LN->isDownloadEnabled());
+	jsonDocSend["totalUpload"].SetInt(LN->totalUpload());
+	jsonDocSend["totalDownload"].SetInt(LN->totalDownload());
 
 	// Stringify the DOM
 	rapidjson::StringBuffer buffer;
